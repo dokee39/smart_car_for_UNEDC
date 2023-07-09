@@ -1,0 +1,6 @@
+// 串口调试命令格式:
+// <!motor1 speed P_I_D set: %f, %f, %f OK?>!        -> kp, ki, kd
+// <!motor1 speed err_limit set: %f, %f, %f OK?>!    -> input_max_err, input_min_err, integral_separate_err
+// <!motor1 speed out_limit set: %f, %f OK?>!        -> max_out, integral_limit
+// <!motor1 speed target set: %f OK?>!               -> set
+// .......2.location............................
