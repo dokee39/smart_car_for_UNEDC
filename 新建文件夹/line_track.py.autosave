@@ -1,0 +1,41 @@
+# Untitled - By: 16212 - 周二 7月 11 2023
+
+import sensor, image, lcd
+from machine import UART
+from fpioa_manager import fm
+
+fm.register(18, fm.fpioa.UART1_TX, force=True)
+fm.register(19, fm.fpioa.UART1_RX, force=True)
+uart1 = UART(UART.UART1, 115200, 8, 0, 1, timeout=1000, read_buf_len=4096)
+
+def sending_data(data):
+    global uart;
+    cmd = bytearray(['<!',data,'>!'])
+    uart_A.write(cmd);
+
+
+lcd.init()
+sensor.reset()
+sensor.set_pixformat(sensor.RGB565) # 灰度
+sensor.set_framesize(sensor.QVGA) # 320x240
+sensor.skip_frames() # 跳过3000张图片
+sensor.set_auto_gain(False) # must be turned off for color tracking
+sensor.set_auto_whitebal(False) # must be turned off for color tracking
+sensor.run(1)
+
+line_threshold = [(0, 100, 16, 127, 0, 75)] # 表示线的颜色范围
+roi_line = [0,100,320,16] # 巡线敏感区
+
+while True:
+    img = sensor.snapshot()
+    blobs_line = img.find_blobs(line_threshold, roi=roi_line, area_threshold=200, merge=True)
+    # area_threshold 面积阈值; merge=True 将所有重叠的blob合并为一个; margin 边界, 如果色块距离小于 120 会被合并
+
+    if blobs_line:
+        for b in blobs_line:
+            tmp = img.draw_rectangle(b[0:4])
+            tmp = img.draw_cross(b[5], b[6])
+            c = img.get_pixel(b[5], b[6])
+    lcd.display(img)
+
+    #sending_data(int(Speed_left),int(Speed_right),Flag)
