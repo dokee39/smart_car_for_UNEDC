@@ -46,7 +46,7 @@
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
 #if IS_DEBUG_UART_ON && IS_DEBUG_ON
-extern int32_t receive_time_ref;
+int32_t receive_time_ref;
 #endif
 /* USER CODE END PV */
 
@@ -196,7 +196,9 @@ void SysTick_Handler(void)
   /* USER CODE END SysTick_IRQn 0 */
   HAL_IncTick();
   /* USER CODE BEGIN SysTick_IRQn 1 */
-
+#if IS_DEBUG_UART_ON && IS_DEBUG_ON
+    receive_time_ref--;
+#endif
   /* USER CODE END SysTick_IRQn 1 */
 }
 
@@ -231,9 +233,6 @@ void USART1_IRQHandler(void)
   /* USER CODE END USART1_IRQn 0 */
   HAL_UART_IRQHandler(&huart1);
   /* USER CODE BEGIN USART1_IRQn 1 */
-#if IS_DEBUG_UART_ON && IS_DEBUG_ON
-    receive_time_ref--;
-#endif
 
   /* USER CODE END USART1_IRQn 1 */
 }

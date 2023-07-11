@@ -16,8 +16,6 @@
 #include "receive.h"
 #include "control.h"
 
-
-
 #if IS_DEBUG_ON
 
 /* 串口调试 */
@@ -65,134 +63,15 @@ char check_char_received[5];
 
 #if IS_DEBUG_UART_PID_FEEDBACK_ON
 // 用于存放 pid 的当前参数
-float current_pids[36];
+float current_pids[27];
 #endif
 
 static cmd_information_t cmd_information; // 包含命令传达的所有信息的结构体
 
-#if IS_DEBUG_UART_CMD_FEEDBACK_ON
-/**
- * @brief 在读到正确的命令后串口返回读取到的信息
- * 
- * @param time 
- */
-static void cmd_feedback(int32_t time)
-{
-    printf("sent after %dms -->  ", time);
-    printf("received-> ");
-
-    switch (cmd_information.MOTOR)
-    {
-    case MOTOR1:
-        printf("motor1 ");
-        break;
-    case MOTOR2:
-        printf("motor2 ");
-        break;
-    }
-
-    switch (cmd_information.PID_LOOP)
-    {
-    case PID_LOOP_SPEED:
-        printf("speed ");
-        break;
-    case PID_LOOP_LOCATION:
-        printf("location ");
-        break;
-    }
-
-    switch (cmd_information.PID_VALUE_TYPE)
-    {
-    case PID_VALUE_P_I_D:
-        printf("P_I_D ");
-        printf("set-> ");
-        printf("%f, %f, %f OK!\r\n", cmd_information.data[0], cmd_information.data[1], cmd_information.data[2]);
-        break;
-    case PID_VALUE_ERR_LIMIT:
-        printf("err_limit ");
-        printf("set-> ");
-        printf("%f, %f, %f OK!\r\n", cmd_information.data[0], cmd_information.data[1], cmd_information.data[2]);
-        break;
-    case PID_VALUE_OUT_LIMIT:
-        printf("out_limit ");
-        printf("set-> ");
-        printf("%f, %f OK!\r\n", cmd_information.data[0], cmd_information.data[1]);
-        break;
-    case PID_VALUE_TARGET:
-        printf("target ");
-        printf("set-> ");
-        printf("%f OK!\r\n", cmd_information.data[0]);
-        break;
-    }
-}
-#endif // !IS_DEBUG_UART_CMD_FEEDBACK_ON
-
-#if IS_DEBUG_UART_PID_FEEDBACK_ON
-void pid_feedback(int32_t time)
-{
-    Control_PIDs_Get(current_pids);
-    printf("sent after %dms -->  This is the current value of the pids ->\r\n", time);
-    printf("    -->  SPEED LOOP ->\r\n");
-    printf("        -->  MOTOR1 -> <kp> %f, <ki> %f, <kd> %f\r\n", current_pids[0], current_pids[1], current_pids[2]);
-    printf("                       <input_max_err> %f, <input_min_err> %f, <integral_separate_err> %f\r\n", current_pids[3], current_pids[4], current_pids[5]);
-    printf("                       <max_out> %f, <integral_limit> %f\r\n", current_pids[6], current_pids[7]);
-    printf("                       <set> %f\r\n", current_pids[8]);
-    printf("        -->  MOTOR2 -> <kp> %f, <ki> %f, <kd> %f\r\n", current_pids[9], current_pids[10], current_pids[11]);
-    printf("                       <input_max_err> %f, <input_min_err> %f, <integral_separate_err> %f\r\n", current_pids[12], current_pids[13], current_pids[14]);
-    printf("                       <max_out> %f, <integral_limit> %f\r\n", current_pids[15], current_pids[16]);
-    printf("                       <set> %f\r\n", current_pids[17]);
-    printf("    -->  LOCATION LOOP ->\r\n");
-    printf("        -->  MOTOR1 -> <kp> %f, <ki> %f, <kd> %f\r\n", current_pids[18], current_pids[19], current_pids[20]);
-    printf("                       <input_max_err> %f, <input_min_err> %f, <integral_separate_err> %f\r\n", current_pids[21], current_pids[22], current_pids[23]);
-    printf("                       <max_out> %f, <integral_limit> %f\r\n", current_pids[24], current_pids[25]);
-    printf("                       <set> %f\r\n", current_pids[26]);
-    printf("        -->  MOTOR2 -> <kp> %f, <ki> %f, <kd> %f\r\n", current_pids[27], current_pids[28], current_pids[29]);
-    printf("                       <input_max_err> %f, <input_min_err> %f, <integral_separate_err> %f\r\n", current_pids[30], current_pids[31], current_pids[32]);
-    printf("                       <max_out> %f, <integral_limit> %f\r\n", current_pids[33], current_pids[34]);
-    printf("                       <set> %f\r\n", current_pids[35]);
-}
-
-#endif // !IS_DEBUG_UART_PID_FEEDBACK_ON
-
-static void pid_set(void)
-{
-    pid_t *ppid;
-    if (cmd_information.PID_LOOP == PID_LOOP_SPEED)
-    {
-        if (cmd_information.MOTOR == MOTOR1)
-            ppid = &pids.speed.motor1;
-        else
-            ppid = &pids.speed.motor2;
-    }
-    else
-    {
-        if (cmd_information.MOTOR == MOTOR1)
-            ppid = &pids.location.motor1;
-        else
-            ppid = &pids.location.motor2;
-    }
-
-    switch (cmd_information.PID_VALUE_TYPE)
-    {
-    case PID_VALUE_P_I_D:
-        pid_set_P_I_D(ppid, cmd_information.data[0], cmd_information.data[1], cmd_information.data[2]);
-        break;
-    case PID_VALUE_ERR_LIMIT:
-        pid_set_err_limit(ppid, cmd_information.data[0], cmd_information.data[1], cmd_information.data[2]);
-        break;
-    case PID_VALUE_OUT_LIMIT:
-        pid_set_out_limit(ppid, cmd_information.data[0], cmd_information.data[1]);
-        break;
-    case PID_VALUE_TARGET:
-        pid_set_target(ppid, cmd_information.data[0]);
-        break;
-    }
-}
-
 /**
  * @brief 验证命令是否正确以及将信息写入 cmd_information 结构体中
- * 
- * @return cmd_find_status_t 
+ *
+ * @return cmd_find_status_t
  */
 static CMD_FIND_STATUS_t cmd_information_find()
 {
@@ -211,6 +90,8 @@ static CMD_FIND_STATUS_t cmd_information_find()
         cmd_information.MOTOR = MOTOR1;
     else if (strncmp(motor_received, "motor2", 6) == 0)
         cmd_information.MOTOR = MOTOR2;
+    else if (strncmp(motor_received, "motor", 5) == 0)
+        cmd_information.MOTOR = MOTOR_ALL;
     else
         return CMD_FIND_FAILURE;
 
@@ -282,10 +163,125 @@ static CMD_FIND_STATUS_t cmd_information_find()
     return CMD_FIND_SUCCESS;
 }
 
+#if IS_DEBUG_UART_CMD_FEEDBACK_ON
+/**
+ * @brief 在读到正确的命令后串口返回读取到的信息
+ *
+ * @param time
+ */
+static void cmd_feedback(int32_t time)
+{
+    printf("sent after %dms -->  ", time);
+    printf("received-> ");
+
+    switch (cmd_information.MOTOR)
+    {
+    case MOTOR1:
+        printf("motor1 ");
+        break;
+    case MOTOR2:
+        printf("motor2 ");
+        break;
+    case MOTOR_ALL:
+        printf("motor ");
+        break;
+    }
+
+    switch (cmd_information.PID_LOOP)
+    {
+    case PID_LOOP_SPEED:
+        printf("speed ");
+        break;
+    case PID_LOOP_LOCATION:
+        printf("location ");
+        break;
+    }
+
+    switch (cmd_information.PID_VALUE_TYPE)
+    {
+    case PID_VALUE_P_I_D:
+        printf("P_I_D ");
+        printf("set-> ");
+        printf("%f, %f, %f OK!\r\n", cmd_information.data[0], cmd_information.data[1], cmd_information.data[2]);
+        break;
+    case PID_VALUE_ERR_LIMIT:
+        printf("err_limit ");
+        printf("set-> ");
+        printf("%f, %f, %f OK!\r\n", cmd_information.data[0], cmd_information.data[1], cmd_information.data[2]);
+        break;
+    case PID_VALUE_OUT_LIMIT:
+        printf("out_limit ");
+        printf("set-> ");
+        printf("%f, %f OK!\r\n", cmd_information.data[0], cmd_information.data[1]);
+        break;
+    case PID_VALUE_TARGET:
+        printf("target ");
+        printf("set-> ");
+        printf("%f OK!\r\n", cmd_information.data[0]);
+        break;
+    }
+}
+#endif // !IS_DEBUG_UART_CMD_FEEDBACK_ON
+
+#if IS_DEBUG_UART_PID_FEEDBACK_ON
+void pid_feedback(int32_t time)
+{
+    Control_PIDs_Get(current_pids);
+    printf("sent after %dms -->  This is the current value of the pids ->\r\n", time);
+    printf("    -->  SPEED LOOP ->\r\n");
+    printf("        -->  MOTOR1 -> <kp> %f, <ki> %f, <kd> %f\r\n", current_pids[0], current_pids[1], current_pids[2]);
+    printf("                       <input_max_err> %f, <input_min_err> %f, <integral_separate_err> %f\r\n", current_pids[3], current_pids[4], current_pids[5]);
+    printf("                       <max_out> %f, <integral_limit> %f\r\n", current_pids[6], current_pids[7]);
+    printf("                       <set> %f\r\n", current_pids[8]);
+    printf("        -->  MOTOR2 -> <kp> %f, <ki> %f, <kd> %f\r\n", current_pids[9], current_pids[10], current_pids[11]);
+    printf("                       <input_max_err> %f, <input_min_err> %f, <integral_separate_err> %f\r\n", current_pids[12], current_pids[13], current_pids[14]);
+    printf("                       <max_out> %f, <integral_limit> %f\r\n", current_pids[15], current_pids[16]);
+    printf("                       <set> %f\r\n", current_pids[17]);
+    printf("    -->  LOCATION LOOP ->\r\n");
+    printf("                       <kp> %f, <ki> %f, <kd> %f\r\n", current_pids[18], current_pids[19], current_pids[20]);
+    printf("                       <input_max_err> %f, <input_min_err> %f, <integral_separate_err> %f\r\n", current_pids[21], current_pids[22], current_pids[23]);
+    printf("                       <max_out> %f, <integral_limit> %f\r\n", current_pids[24], current_pids[25]);
+    printf("                       <set> %f\r\n", current_pids[26]);
+}
+#endif // !IS_DEBUG_UART_PID_FEEDBACK_ON
+
+static void pid_set(void)
+{
+    pid_t *ppid;
+    if (cmd_information.PID_LOOP == PID_LOOP_SPEED)
+    {
+        if (cmd_information.MOTOR == MOTOR1)
+            ppid = &pids.speed.motor1;
+        else
+            ppid = &pids.speed.motor2;
+    }
+    else if (cmd_information.PID_LOOP == PID_LOOP_LOCATION)
+    {
+        if (cmd_information.MOTOR == MOTOR_ALL)
+            ppid = &pids.location;
+    }
+
+    switch (cmd_information.PID_VALUE_TYPE)
+    {
+    case PID_VALUE_P_I_D:
+        pid_set_P_I_D(ppid, cmd_information.data[0], cmd_information.data[1], cmd_information.data[2]);
+        break;
+    case PID_VALUE_ERR_LIMIT:
+        pid_set_err_limit(ppid, cmd_information.data[0], cmd_information.data[1], cmd_information.data[2]);
+        break;
+    case PID_VALUE_OUT_LIMIT:
+        pid_set_out_limit(ppid, cmd_information.data[0], cmd_information.data[1]);
+        break;
+    case PID_VALUE_TARGET:
+        pid_set_target(ppid, cmd_information.data[0]);
+        break;
+    }
+}
+
 /**
  * @brief 根据命令调节 PID
- * 
- * @param timeout 
+ *
+ * @param timeout
  */
 void Debug_SetPIDbasedonReceive(int32_t timeout)
 {
@@ -303,7 +299,7 @@ void Debug_SetPIDbasedonReceive(int32_t timeout)
                 cmd_feedback(timeout - receive_time_ref);
 #endif // !IS_DEBUG_UART_CMD_FEEDBACK_ON
 
-                pid_set();
+                pid_set(); // TODO
                 printf("sent after %dms -->  PID_SET_OK!\r\n", timeout - receive_time_ref);
 
 #if IS_DEBUG_UART_PID_FEEDBACK_ON
@@ -317,7 +313,6 @@ void Debug_SetPIDbasedonReceive(int32_t timeout)
             {
                 printf("sent after %dms -->  COMMAND_ERROR!\r\n", timeout - receive_time_ref);
             }
-            
         }
     }
 }
@@ -325,4 +320,3 @@ void Debug_SetPIDbasedonReceive(int32_t timeout)
 #endif // !IS_DEBUG_UART_ON
 
 #endif // !IS_DEBUG_ON
-

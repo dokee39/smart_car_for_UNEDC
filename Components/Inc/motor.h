@@ -55,7 +55,8 @@
 typedef enum
 {
     MOTOR1,
-    MOTOR2
+    MOTOR2,
+    MOTOR_ALL // 不对应实际的电机, 而表示小车整体
 } MOTOR_t;
 
 // 电机方向

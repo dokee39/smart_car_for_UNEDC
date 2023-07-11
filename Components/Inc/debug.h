@@ -4,9 +4,9 @@
  * @brief 用于调试
  * @version 0.1
  * @date 2023-07-04
- * 
+ *
  * @copyright Copyright (c) 2023
- * 
+ *
  */
 
 #ifndef __DEBUG_H__
@@ -32,7 +32,8 @@
 // <!motor1 speed err_limit set: %f, %f, %f OK?>!    -> input_max_err, input_min_err, integral_separate_err
 // <!motor1 speed out_limit set: %f, %f OK?>!        -> max_out, integral_limit
 // <!motor1 speed target set: %f OK?>!               -> set
-// .......2.location............................
+// .......2.speed................................
+// ..motor..location.............................
 
 /* 调试模式总开关 */
 #define IS_DEBUG_ON 1
@@ -54,8 +55,9 @@
 /* 串口调试 */
 #define IS_DEBUG_UART_ON 1
 #define IS_DEBUG_UART_REAL_TIME_MONITOR_ON 1
-#define IS_DEBUG_UART_CMD_FEEDBACK_ON 0
-#define IS_DEBUG_UART_PID_FEEDBACK_ON 0
+#define IS_DEBUG_UART_CMD_FEEDBACK_ON 1
+#define IS_DEBUG_UART_PID_FEEDBACK_ON 1
+// 下面分别调试 pid 各环的不能同时打开
 #define IS_DEBUG_UART_PID_LOOP_SPEED 0
 #define IS_DEBUG_UART_PID_LOOP_LOCATION_SPEED 1
 #if IS_DEBUG_UART_ON
@@ -69,7 +71,7 @@ void Debug_SetPIDbasedonReceive(int32_t timeout);
 
 #endif // !IS_DEBUG_UART_ON
 
-#define IS_DEBUG_IN_MAIN_C_ON 1
+#define IS_DEBUG_IN_MAIN_C_ON 0
 
 #endif // !IS_DEBUG_ON
 

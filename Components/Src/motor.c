@@ -62,7 +62,7 @@ void Motor_Disable(MOTOR_t MOTOR)
         __MOTOR1_DISABLE;
         __MOTOR1_DUTY_SET(0);
     }
-    else
+    else if (MOTOR == MOTOR2)
     {
         is_motor2_en = 0;
         __MOTOR2_INA_RESET;
@@ -74,9 +74,9 @@ void Motor_Disable(MOTOR_t MOTOR)
 
 /**
  * @brief 设置电机方向
- * 
- * @param MOTOR 
- * @param MOTOR_DIR 
+ *
+ * @param MOTOR
+ * @param MOTOR_DIR
  */
 void Motor_DirSet(MOTOR_t MOTOR, MOTOR_DIR_t MOTOR_DIR)
 {
@@ -99,7 +99,7 @@ void Motor_DirSet(MOTOR_t MOTOR, MOTOR_DIR_t MOTOR_DIR)
             __MOTOR1_INB_SET;
         }
     }
-    else
+    else if (MOTOR == MOTOR2)
     {
         motor2_dir = MOTOR_DIR;
         switch (motor2_dir)
@@ -121,9 +121,9 @@ void Motor_DirSet(MOTOR_t MOTOR, MOTOR_DIR_t MOTOR_DIR)
 
 /**
  * @brief 设置电机 PWM 的占空比
- * 
- * @param MOTOR 
- * @param duty 
+ *
+ * @param MOTOR
+ * @param duty
  */
 void Motor_DutySet(MOTOR_t MOTOR, uint16_t duty)
 {
@@ -131,7 +131,9 @@ void Motor_DutySet(MOTOR_t MOTOR, uint16_t duty)
     {
         motor1_duty = duty;
         __MOTOR1_DUTY_SET(motor1_duty);
-    } else {
+    }
+    else if (MOTOR == MOTOR2)
+    {
         motor2_duty = duty;
         __MOTOR2_DUTY_SET(motor2_duty);
     }
@@ -139,9 +141,9 @@ void Motor_DutySet(MOTOR_t MOTOR, uint16_t duty)
 
 /**
  * @brief 更新两个电机的占空比
- * 
- * @param motor1_PWM_duty 
- * @param motor2_PWM_duty 
+ *
+ * @param motor1_PWM_duty
+ * @param motor2_PWM_duty
  */
 void Motor_Output(int16_t motor1_PWM_duty, int16_t motor2_PWM_duty)
 {
@@ -168,6 +170,6 @@ void Motor_Output(int16_t motor1_PWM_duty, int16_t motor2_PWM_duty)
 
     motor2_PWM_duty = (motor2_PWM_duty > MOTOR_DUTY_MAX) ? MOTOR_DUTY_MAX : motor2_PWM_duty; // 速度上限处理
 
-    Motor_DutySet(MOTOR1, motor1_PWM_duty);  // 设置 PWM 占空比
+    Motor_DutySet(MOTOR1, motor1_PWM_duty); // 设置 PWM 占空比
     Motor_DutySet(MOTOR2, motor2_PWM_duty); // 设置 PWM 占空比
 }

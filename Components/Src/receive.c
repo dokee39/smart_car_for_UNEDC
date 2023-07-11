@@ -31,9 +31,6 @@ uint8_t is_data_available = 0;
 
 uint8_t is_data_overwritten = 0;
 
-/* time in milliseconds with systick */
-int32_t receive_time_ref = 0;
-
 /**
  * @brief Initialize the Ring Buffer
  *
@@ -74,15 +71,13 @@ void Receive_BufReset(void)
     Receive_FlagReset();
 }
 
-
-
 /**
  * @brief 从 MainBuf 中找到被起始和终止命令包裹的字符串并拷贝到 pdata 中
- * 
- * @param cmd_start 
- * @param cmd_end 
+ *
+ * @param cmd_start
+ * @param cmd_end
  * @param pdata 长度必须大于等于 MainBuf_SIZE
- * @return receive_state_t 
+ * @return receive_state_t
  */
 RECEIVE_STATUS_t Receive_FindFirstVaildString(char *cmd_start, char *cmd_end, char *pdata)
 {
@@ -184,7 +179,7 @@ RECEIVE_STATUS_t Receive_FindFirstVaildString(char *cmd_start, char *cmd_end, ch
             memcpy((void *)pdata, (void *)(MainBuf + data_start_pos), data_len);
             head = indx_buf;
         }
-        else 
+        else
         {
             uint16_t data_in_tail_len = 0;
             data_in_tail_len = MainBuf_SIZE - data_start_pos;
@@ -210,7 +205,6 @@ RECEIVE_STATUS_t Receive_FindFirstVaildString(char *cmd_start, char *cmd_end, ch
         {
             return RECEIVE_SUCCESS;
         }
-        
     }
 }
 
@@ -227,12 +221,12 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
     // 拷贝数据 (如有溢出拷贝在前面，即形成环式的数据)
     if (oldPos + Size > MainBuf_SIZE) // If the current position + new data size is greater than the main buffer
     {
-        uint16_t datatocopy = MainBuf_SIZE - oldPos;                 // find out how much space is left in the main buffer
+        uint16_t datatocopy = MainBuf_SIZE - oldPos;                   // find out how much space is left in the main buffer
         memcpy((void *)(MainBuf + oldPos), (void *)RxBuf, datatocopy); // copy data in that remaining space
         // (uint8_t *) ?
-        oldPos = 0;                                                               // point to the start of the buffer
+        oldPos = 0;                                                                 // point to the start of the buffer
         memcpy((void *)MainBuf, (void *)(RxBuf + datatocopy), (Size - datatocopy)); // copy the remaining data
-        newPos = (Size - datatocopy);                                             // update the position
+        newPos = (Size - datatocopy);                                               // update the position
     }
     else
     {

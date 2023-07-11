@@ -42,7 +42,7 @@
 
 /* Exported macro ------------------------------------------------------------*/
 /* USER CODE BEGIN EM */
-
+extern int32_t receive_time_ref;
 /* USER CODE END EM */
 
 /* Exported functions prototypes ---------------------------------------------*/

@@ -15,7 +15,7 @@ def uart1_send(data):
 
 lcd.init()
 sensor.reset()
-sensor.set_pixformat(sensor.RGB565) # 灰度
+sensor.set_pixformat(sensor.RGB565)
 sensor.set_framesize(sensor.QVGA) # 320x240
 sensor.skip_frames()
 sensor.set_auto_gain(False) # must be turned off for color tracking

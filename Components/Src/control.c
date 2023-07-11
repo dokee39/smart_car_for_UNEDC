@@ -17,24 +17,26 @@
 #include "pid.h"
 #include "debug.h"
 #include "stdio.h"
+#include "stm32f1xx_it.h"
 
 #if IS_DEBUG_UART_ON && IS_DEBUG_ON
 static float debug_motor1_voltage = 0.0f; // 真实电压值
 static float debug_motor2_voltage = 0.0f;
 pids_t pids;
 #else
-// 包含一个环的 pid 的结构体, 分电机
+// 一个分电机的 pid 的结构体,
 typedef struct
 {
     pid_t motor1;
     pid_t motor2;
 } pid_loop_t;
 
-// 包含所有 pid 的结构体, 分为速度环和位置环
+// 包含所有 pid 的结构体, 分为速度环、位置环和转向补偿
 typedef struct
 {
     pid_loop_t speed;
-    pid_loop_t location;
+    pid_t location;
+    pid_t steer_compensation;
 } pids_t;
 
 static pids_t pids;
@@ -44,20 +46,19 @@ static float motor1_speed = 0.0f;
 static float motor2_speed = 0.0f;
 static float motor1_location = 0.0f;
 static float motor2_location = 0.0f;
+static float motor_location_average = 0.0f;
 static float motor1_speed_set = 0.0f; // 位置环的输出值
 static float motor2_speed_set = 0.0f;
-static float motor1_location_set = 0.0f; // 位置环设置的目标值
-static float motor2_location_set = 0.0f;
-static float motor1_voltage = 0.0f; // 速度环的输出值
-static float motor2_voltage = 0.0f; // 不是实际电压值, 只是确定 PWM 占空比的比较值
+static float motor_location_set = 0.0f; // 位置环设置的目标值
+static float motor1_voltage = 0.0f;     // 速度环的输出值
+static float motor2_voltage = 0.0f;     // 不是实际电压值, 只是确定 PWM 占空比的比较值
 
 void Control_PID_Init(void)
 {
     // &pid, input_max_err, input_min_err, integral_separate_err, maxout, intergral_limit, kp, ki, kd
     pid_struct_init(&pids.speed.motor1, 0, 0.5f, 0, MOTOR_DUTY_MAX, 2000, 1.7f, 0.8f, 0);
     pid_struct_init(&pids.speed.motor2, 0, 0.5f, 0, MOTOR_DUTY_MAX, 2000, 1.75f, 0.95f, 0);
-    pid_struct_init(&pids.location.motor1, 0, 0.2f, 0, TARGET_SPEED_MAX, 0, 10, 0, 0);
-    pid_struct_init(&pids.location.motor2, 0, 0.2f, 0, TARGET_SPEED_MAX, 0, 10, 0, 0);
+    pid_struct_init(&pids.location, 0, 0.2f, 0, TARGET_SPEED_MAX, 0, 10, 0, 0);
 }
 
 #if IS_DEBUG_UART_PID_FEEDBACK_ON && IS_DEBUG_UART_ON && IS_DEBUG_ON
@@ -85,7 +86,7 @@ static void pid_get(pid_t *pid, float *ppid)
 }
 
 /**
- * @brief 获取当前所有 pid 的值放进数组 ppids (4*9=36) 中
+ * @brief 获取当前所有 pid 的值放进数组 ppids (3*9=27) 中
  *
  * @param ppids
  */
@@ -93,8 +94,7 @@ void Control_PIDs_Get(float *ppids)
 {
     pid_get(&pids.speed.motor1, &ppids[0]);
     pid_get(&pids.speed.motor2, &ppids[9]);
-    pid_get(&pids.location.motor1, &ppids[18]);
-    pid_get(&pids.location.motor2, &ppids[27]);
+    pid_get(&pids.location, &ppids[18]);
 }
 #endif // !IS_DEBUG_UART_PID_FEEDBACK_ON && IS_DEBUG_UART_ON && IS_DEBUG_ON
 
@@ -118,21 +118,15 @@ static float Control_Speed(MOTOR_t MOTOR)
     return control_val;
 }
 
-static float Control_Location(MOTOR_t MOTOR)
+static float Control_Location(void)
 {
     float control_val = 0.0f; // 当前控制值
 
 // 调试位置速度环时, 保持位置目标值不变
 #if IS_DEBUG_UART_PID_LOOP_LOCATION_SPEED
-    if (MOTOR == MOTOR1)
-        control_val = pid_calculate(&pids.location.motor1, motor1_location, pids.location.motor1.set);
-    else
-        control_val = pid_calculate(&pids.location.motor2, motor2_location, pids.location.motor2.set);
+    control_val = pid_calculate(&pids.location, motor_location_average, pids.location.set);
 #else
-    if (MOTOR == MOTOR1)
-        control_val = pid_calculate(&pids.location.motor1, motor1_location, motor1_location_set);
-    else
-        control_val = pid_calculate(&pids.location.motor2, motor2_location, motor2_location_set);
+    control_val = pid_calculate(&pids.location, motor_location_average, motor_location_set);
 #endif
 
     /* 目标速度上限处理 */
@@ -153,9 +147,8 @@ static void Control_LocationSpeed(void)
         if (control_location_count >= 2)
         {
             control_location_count = 0;
-
-            motor1_speed_set = Control_Location(MOTOR1);
-            motor2_speed_set = Control_Location(MOTOR2);
+            motor1_speed_set = Control_Location();
+            motor2_speed_set = motor1_speed_set;
         }
 
 // 调试速度环时, 保持速度环目标值不变
@@ -180,11 +173,14 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) // 好像处理sysTi
 {
     if (htim == (&htim_PID_Interval)) // TIM7 用于产生 PID 执行时间间隔, 每 20ms 进入一次
     {
+        // TODO
+        int32_t time = receive_time_ref;
         Encoder_PulseGet();
         motor1_speed = ((float)encoder_motor1_pulsenum * 1000.0 * 60.0) / (PULSE_PER_REVOLUTION * PID_PERIOD);
         motor2_speed = ((float)encoder_motor2_pulsenum * 1000.0 * 60.0) / (PULSE_PER_REVOLUTION * PID_PERIOD);
         motor1_location = ((float)encoder_motor1_pulsenum_sum / PULSE_PER_REVOLUTION) * JOURNEY_PER_REVOLUTION;
         motor2_location = ((float)encoder_motor2_pulsenum_sum / PULSE_PER_REVOLUTION) * JOURNEY_PER_REVOLUTION;
+        motor_location_average = (motor1_location + motor2_location) / 2.0f;
 
 // 调试速度环时用
 #if IS_DEBUG_UART_PID_LOOP_SPEED && IS_DEBUG_UART_ON && IS_DEBUG_ON
@@ -216,22 +212,24 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) // 好像处理sysTi
 #if IS_DEBUG_UART_REAL_TIME_MONITOR_ON && IS_DEBUG_UART_ON && IS_DEBUG_ON
         if (is_UART_working == 0)
         {
-            printf("motor: %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\r\n",
+            printf("motor: %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f\r\n",
                    motor1_speed,
                    motor2_speed,
                    pids.speed.motor1.set,
                    pids.speed.motor2.set,
                    motor1_location,
                    motor2_location,
-                   pids.location.motor1.set,
-                   pids.location.motor2.set,
+                   motor_location_average,
+                   pids.location.set,
                    debug_motor1_voltage,
                    debug_motor2_voltage);
+            time -= receive_time_ref;
+            printf("sent in %dms\r\n", time);
         }
 #endif
     }
 
-    else if (htim == (&htim_Debug_LED_Interval)) // 1s进入一次TIM6的中断
+    else if (htim == (&htim_Debug_LED_Interval)) // 1s 进入一次TIM6的中断
     {
 #if IS_DEBUG_LED_ORANGE_ON && IS_DEBUG_ON
         __DEGUG_LED_ORANGE_TOGGLE;

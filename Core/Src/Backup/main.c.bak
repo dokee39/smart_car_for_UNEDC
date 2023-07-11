@@ -98,7 +98,7 @@ int main(void)
   MX_TIM8_Init();
   MX_USART1_UART_Init();
   MX_TIM4_Init();
-  MX_TIM1_Init();
+  MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
     // IN the Generated code, make sure the DMA is initialized before the UART.
     // CubeMX sometimes does the opposite and in that case, DMA won't work
@@ -117,10 +117,16 @@ int main(void)
 #if IS_DEBUG_UART_ON && IS_DEBUG_ON
     Receive_BufInit();
 
-    // Motor Enable In Debug
+#if IS_DEBUG_UART_PID_LOOP_SPEED || IS_DEBUG_UART_PID_LOOP_LOCATION_SPEED
     Motor_Enable(MOTOR1);
     Motor_Enable(MOTOR2);
-#endif
+#endif // !IS_DEBUG_UART_PID_LOOP_SPEED || IS_DEBUG_UART_PID_LOOP_LOCATION_SPEED
+#endif // !IS_DEBUG_UART_ON && IS_DEBUG_ON
+
+#if IS_DEBUG_IN_MAIN_C_ON
+    HAL_Delay(5000);
+    pid_set_target(&pids.location, 100);
+#endif // !IS_DEBUG_IN_MAIN_C_ON
 
   /* USER CODE END 2 */
 
@@ -131,6 +137,14 @@ int main(void)
 #if IS_DEBUG_UART_ON && IS_DEBUG_ON
         Debug_SetPIDbasedonReceive(1000);
 #endif
+
+#if IS_DEBUG_IN_MAIN_C_ON
+        if (pids.speed.motor1.set <= 1 && pids.speed.motor1.set >= -1)
+        {
+            HAL_Delay(2000);
+            pid_set_target(&pids.location, -pids.location.set);
+        }
+#endif // !IS_DEBUG_IN_MAIN_C_ON
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
