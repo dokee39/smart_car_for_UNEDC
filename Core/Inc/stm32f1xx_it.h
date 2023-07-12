@@ -42,6 +42,7 @@
 
 /* Exported macro ------------------------------------------------------------*/
 /* USER CODE BEGIN EM */
+// 每 1ms 减一, 给串口接收作为参考用来查看是否超时, 注意这个变量不能被同时使用
 extern int32_t receive_time_ref;
 /* USER CODE END EM */
 

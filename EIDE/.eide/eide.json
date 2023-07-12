@@ -79,6 +79,21 @@
                   }
                 ],
                 "folders": []
+              },
+              {
+                "name": "System",
+                "files": [
+                  {
+                    "path": "../System/Src/list.c"
+                  },
+                  {
+                    "path": "../System/Src/task_process.c"
+                  },
+                  {
+                    "path": "../System/Src/timesilce_task.c"
+                  }
+                ],
+                "folders": []
               }
             ]
           }
@@ -246,7 +261,8 @@
           ".cmsis/include",
           "../MDK-ARM/RTE/_smart_car_for_UNEDC",
           ".eide/deps",
-          "../Components/Inc"
+          "../Components/Inc",
+          "../System/Inc"
         ],
         "libList": [],
         "sourceDirList": [],

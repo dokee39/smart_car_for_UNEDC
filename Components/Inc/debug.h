@@ -44,14 +44,9 @@
 #define IS_DEBUG_LED_RUN_ON 1
 #if IS_DEBUG_LED_RUN_ON
 
-// 打开 LED_green
-#define __DEGUG_LED_RUN_ON HAL_GPIO_WritePin(LED_run_GPIO_Port, LED_run_Pin, GPIO_PIN_RESET)
-// 关闭 LED_green
-#define __DEGUG_LED_RUN_OFF HAL_GPIO_WritePin(LED_run_GPIO_Port, LED_run_Pin, GPIO_PIN_SET)
-// 翻转 LED_green
-#define __DEGUG_LED_RUN_TOGGLE HAL_GPIO_TogglePin(LED_run_GPIO_Port, LED_run_Pin)
+void Debug_LED_run_Toggle(void);
 
-#endif // !IS_DEBUG_LED_GREEN_ON
+#endif // !IS_DEBUG_LED_RUN_ON
 
 /* 串口调试 */
 #define IS_DEBUG_UART_ON 1
@@ -69,7 +64,7 @@
 
 extern uint8_t is_UART_working;
 
-void Debug_SetPIDbasedonReceive(int32_t timeout);
+void Debug_SetPID_basedon_Receive(void);
 
 #endif // !IS_DEBUG_UART_ON
 

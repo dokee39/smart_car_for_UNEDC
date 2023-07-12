@@ -107,7 +107,11 @@ void Error_Handler(void);
 #define htim_Motor2_Encoder htim8
 #define htim_Motor_PWM htim4
 #define htim_PID_Interval htim7
-#define htim_Debug_LED_Interval htim6
+#define htim_Task_Interval htim6
+
+// 定时器时间间隔
+#define TIM_PID_INTERVAL 20u
+#define TIM_TASK_INTERVAL 10u
 
 // 定时器通道马甲
 #define TIM_CHANNEL_ENCODER_1 TIM_CHANNEL_1

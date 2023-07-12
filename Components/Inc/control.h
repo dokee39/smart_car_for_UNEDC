@@ -24,9 +24,9 @@
 #define JOURNEY_PER_REVOLUTION (float)(WHEEL_DIAMETER * 3.1416f)               // 轮子每转走的路程
 
 /**************** 软件设置 **************************/
-#define PID_PERIOD 20           // tim_PID_Interval 的定时周期 (ms)
 #define CONTROL_LOCAATION_DIV 2 // 每隔多少次进行一次位置控制
 #define TARGET_SPEED_MAX 200
+#define STEER_COMPENSATION_VALID_TIME 300 // 超过这个时间就把转向补偿 ban 掉, 为 Debug_SetSteerCompensationbasedonReceive() 的参数
 
 #if IS_DEBUG_UART_ON && IS_DEBUG_ON
 // pid 环名称
@@ -55,6 +55,8 @@ extern pids_t pids;
 #endif // !IS_DEBUG_UART_ON && IS_DEBUG_ON
 
 void Control_PID_Init(void);
+void Control_SetSteerCompensation_basedon_Receive(void);
+void Control_Task(void);
 
 #if IS_DEBUG_UART_PID_FEEDBACK_ON && IS_DEBUG_UART_ON && IS_DEBUG_ON
 void Control_PIDs_Get(float *ppids);

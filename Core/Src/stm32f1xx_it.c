@@ -45,9 +45,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
-#if IS_DEBUG_UART_ON && IS_DEBUG_ON
 int32_t receive_time_ref;
-#endif
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/

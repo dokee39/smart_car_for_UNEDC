@@ -135,8 +135,12 @@ int main(void)
   /* USER CODE BEGIN WHILE */
     while (1)
     {
+        // TODO 接收及处理 K210 传递的值
+        // TODO 不能这样轮询, 想想其他方案 (任务链表？)
+        // TODO debug 的也要改
+
 #if IS_DEBUG_UART_ON && IS_DEBUG_ON
-        Debug_SetPIDbasedonReceive(1000);
+        Debug_SetPID_basedon_Receive(1000);
 #endif
 
 #if IS_DEBUG_IN_MAIN_C_ON

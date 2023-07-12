@@ -11,13 +11,15 @@
 
 #include "control.h"
 #include "main.h"
-#include "tim.h"
 #include "encoder.h"
-#include "motor.h"
 #include "pid.h"
+#include "motor.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "debug.h"
-#include "stdio.h"
-#include "stm32f1xx_it.h"
+#include "receive.h"
 
 #if IS_DEBUG_UART_ON && IS_DEBUG_ON
 static float debug_motor1_voltage = 0.0f; // 真实电压值
@@ -44,14 +46,22 @@ static pids_t pids;
 
 static float motor1_speed = 0.0f;
 static float motor2_speed = 0.0f;
+static float motor1_speed_set = 0.0f; // 位置环的输出值
+static float motor2_speed_set = 0.0f;
+
+static float motor_speed_difference = 0.0f;
+
 static float motor1_location = 0.0f;
 static float motor2_location = 0.0f;
 static float motor_location_average = 0.0f;
-static float motor1_speed_set = 0.0f; // 位置环的输出值
-static float motor2_speed_set = 0.0f;
 static float motor_location_set = 0.0f; // 位置环设置的目标值
+
 static float motor1_voltage = 0.0f;     // 速度环的输出值
 static float motor2_voltage = 0.0f;     // 不是实际电压值, 只是确定 PWM 占空比的比较值
+
+static char *cmd_start = "<!"; // K210 命令包头
+static char *cmd_end = ">!";   // K210 命令包尾
+static char cmd[MainBuf_SIZE]; // 用于存放从 K210 收到的命令
 
 void Control_PID_Init(void)
 {
@@ -59,6 +69,7 @@ void Control_PID_Init(void)
     pid_struct_init(&pids.speed.motor1, 0, 0.5f, 0, MOTOR_DUTY_MAX, 2000, 1.7f, 0.8f, 0);
     pid_struct_init(&pids.speed.motor2, 0, 0.5f, 0, MOTOR_DUTY_MAX, 2000, 1.75f, 0.95f, 0);
     pid_struct_init(&pids.location, 0, 0.2f, 0, TARGET_SPEED_MAX, 0, 10, 0, 0);
+    // TODO 初始化转向补偿 PID
 }
 
 #if IS_DEBUG_UART_PID_FEEDBACK_ON && IS_DEBUG_UART_ON && IS_DEBUG_ON
@@ -138,6 +149,39 @@ static float Control_Location(void)
     return control_val;
 }
 
+void Control_SetSteerCompensation_basedon_Receive(void)
+{
+//     memset(cmd, '\0', MainBuf_SIZE);
+//     while (receive_time_ref > 0)
+//     {
+//         if (Receive_FindFirstVaildString(&uart_for_debug, cmd_start, cmd_end, cmd) == RECEIVE_SUCCESS)
+//         {
+//             if (cmd_information_find() == CMD_FIND_SUCCESS)
+//             {
+//                 is_UART_working = 1;
+
+// #if IS_DEBUG_UART_CMD_FEEDBACK_ON
+//                 cmd_feedback(timeout - receive_time_ref);
+// #endif // !IS_DEBUG_UART_CMD_FEEDBACK_ON
+
+//                 pid_set(); // TODO
+//                 printf("sent after %dms -->  PID_SET_OK!\r\n", timeout - receive_time_ref);
+
+// #if IS_DEBUG_UART_PID_FEEDBACK_ON
+//                 pid_feedback(timeout - receive_time_ref);
+// #endif // !IS_DEBUG_UART_PID_FEEDBACK_ON
+
+//                 is_UART_working = 0;
+//                 break;
+//             }
+//             else
+//             {
+//                 printf("sent after %dms -->  COMMAND_ERROR!\r\n", timeout - receive_time_ref);
+//             }
+//         }
+//     }
+}
+
 // TODO 计算 delta v 的函数
 static void Control_SteerCompensation(void)
 {
@@ -175,17 +219,15 @@ static void Control_LocationSpeed(void) // TODO 改名字，以及加入转向�
     }
 }
 
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) // 好像处理sysTick，其他定时器产生中断要调用回调函数时，都要进到这个函数里进行判断后在执行相应操作
+void Control_Task(void)
 {
-    if (htim == (&htim_PID_Interval)) // TIM7 用于产生 PID 执行时间间隔, 每 20ms 进入一次
-    {
-        // TODO 在合适的位置取得补偿值和设置标志位等
+            // TODO 在合适的位置取得补偿值和设置标志位等
 #if IS_DEBUG_UART_TIME_FEEDBACK_ON && IS_DEBUG_UART_ON && IS_DEBUG_ON
         int32_t time = receive_time_ref;
 #endif // !IS_DEBUG_UART_TIME_FEEDBACK_ON
         Encoder_PulseGet();
-        motor1_speed = ((float)encoder_motor1_pulsenum * 1000.0 * 60.0) / (PULSE_PER_REVOLUTION * PID_PERIOD);
-        motor2_speed = ((float)encoder_motor2_pulsenum * 1000.0 * 60.0) / (PULSE_PER_REVOLUTION * PID_PERIOD);
+        motor1_speed = ((float)encoder_motor1_pulsenum * 1000.0 * 60.0) / (PULSE_PER_REVOLUTION * TIM_PID_INTERVAL);
+        motor2_speed = ((float)encoder_motor2_pulsenum * 1000.0 * 60.0) / (PULSE_PER_REVOLUTION * TIM_PID_INTERVAL);
         motor1_location = ((float)encoder_motor1_pulsenum_sum / PULSE_PER_REVOLUTION) * JOURNEY_PER_REVOLUTION;
         motor2_location = ((float)encoder_motor2_pulsenum_sum / PULSE_PER_REVOLUTION) * JOURNEY_PER_REVOLUTION;
         motor_location_average = (motor1_location + motor2_location) / 2.0f;
@@ -237,12 +279,4 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) // 好像处理sysTi
 #endif // !IS_DEBUG_UART_TIME_FEEDBACK_ON
         }
 #endif
-    }
-
-    else if (htim == (&htim_Debug_LED_Interval)) // 1s 进入一次TIM6的中断
-    {
-#if IS_DEBUG_LED_RUN_ON && IS_DEBUG_ON
-        __DEGUG_LED_RUN_TOGGLE;
-#endif
-    }
 }

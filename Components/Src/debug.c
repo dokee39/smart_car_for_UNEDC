@@ -284,40 +284,44 @@ static void pid_set(void)
  *
  * @param timeout
  */
-void Debug_SetPIDbasedonReceive(int32_t timeout)
+void Debug_SetPID_basedon_Receive(void)
 {
-    receive_time_ref = timeout;
+    receive_time_ref = 0; // TODO 是否会影响其他用到的？
     memset(cmd, '\0', MainBuf_SIZE);
-    while (receive_time_ref > 0)
+    if (Receive_FindFirstVaildString(&uart_for_debug, cmd_start, cmd_end, cmd) == RECEIVE_SUCCESS)
     {
-        if (Receive_FindFirstVaildString(&uart_for_debug, cmd_start, cmd_end, cmd) == RECEIVE_SUCCESS)
+        if (cmd_information_find() == CMD_FIND_SUCCESS)
         {
-            if (cmd_information_find() == CMD_FIND_SUCCESS)
-            {
-                is_UART_working = 1;
+            is_UART_working = 1;
 
 #if IS_DEBUG_UART_CMD_FEEDBACK_ON
-                cmd_feedback(timeout - receive_time_ref);
+            cmd_feedback(timeout - receive_time_ref);
 #endif // !IS_DEBUG_UART_CMD_FEEDBACK_ON
 
-                pid_set(); // TODO
-                printf("sent after %dms -->  PID_SET_OK!\r\n", timeout - receive_time_ref);
+            pid_set(); // TODO
+            printf("sent after %dms -->  PID_SET_OK!\r\n", -receive_time_ref);
 
 #if IS_DEBUG_UART_PID_FEEDBACK_ON
-                pid_feedback(timeout - receive_time_ref);
+            pid_feedback(timeout - receive_time_ref);
 #endif // !IS_DEBUG_UART_PID_FEEDBACK_ON
 
-                is_UART_working = 0;
-                break;
-            }
-            else
-            {
-                printf("sent after %dms -->  COMMAND_ERROR!\r\n", timeout - receive_time_ref);
-            }
+            is_UART_working = 0;
+        }
+        else
+        {
+            printf("sent after %dms -->  COMMAND_ERROR!\r\n", -receive_time_ref);
         }
     }
 }
 
 #endif // !IS_DEBUG_UART_ON
+
+#if IS_DEBUG_LED_RUN_ON
+void Debug_LED_run_Toggle(void)
+{
+    HAL_GPIO_TogglePin(LED_run_GPIO_Port, LED_run_Pin);
+}
+#endif //!IS_DEBUG_LED_RUN_ON
+
 
 #endif // !IS_DEBUG_ON
