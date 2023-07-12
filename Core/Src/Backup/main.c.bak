@@ -99,6 +99,7 @@ int main(void)
   MX_USART1_UART_Init();
   MX_TIM4_Init();
   MX_TIM3_Init();
+  MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
     // IN the Generated code, make sure the DMA is initialized before the UART.
     // CubeMX sometimes does the opposite and in that case, DMA won't work
@@ -115,7 +116,7 @@ int main(void)
     Control_PID_Init();
 
 #if IS_DEBUG_UART_ON && IS_DEBUG_ON
-    Receive_BufInit();
+    Receive_Init(&uart_for_debug, &huart_for_debug, &hdma_usart_for_debug_rx);
 
 #if IS_DEBUG_UART_PID_LOOP_SPEED || IS_DEBUG_UART_PID_LOOP_LOCATION_SPEED
     Motor_Enable(MOTOR1);

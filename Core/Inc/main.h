@@ -57,10 +57,18 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define huart_with_K210 huart2
+#define hdma_usart_with_K210_rx hdma_usart2_rx
+#define hdma_usart_for_debug_rx hdma_usart1_rx
+#define huart_for_debug huart1
 #define OSC_IN_Pin GPIO_PIN_0
 #define OSC_IN_GPIO_Port GPIOD
 #define OSC_OUT_Pin GPIO_PIN_1
 #define OSC_OUT_GPIO_Port GPIOD
+#define USART_with_K210_TX_Pin GPIO_PIN_2
+#define USART_with_K210_TX_GPIO_Port GPIOA
+#define USART_with_K210_RX_Pin GPIO_PIN_3
+#define USART_with_K210_RX_GPIO_Port GPIOA
 #define Motor1_INA_Pin GPIO_PIN_0
 #define Motor1_INA_GPIO_Port GPIOB
 #define Motor1_INB_Pin GPIO_PIN_1
@@ -73,16 +81,16 @@ void Error_Handler(void);
 #define Motor2_INA_GPIO_Port GPIOC
 #define Motor2_INB_Pin GPIO_PIN_9
 #define Motor2_INB_GPIO_Port GPIOC
-#define USART1_TX_Pin GPIO_PIN_9
-#define USART1_TX_GPIO_Port GPIOA
-#define USART1_RX_Pin GPIO_PIN_10
-#define USART1_RX_GPIO_Port GPIOA
+#define LED_run_Pin GPIO_PIN_8
+#define LED_run_GPIO_Port GPIOA
+#define USART_for_debug_TX_Pin GPIO_PIN_9
+#define USART_for_debug_TX_GPIO_Port GPIOA
+#define USART_for_debug_RX_Pin GPIO_PIN_10
+#define USART_for_debug_RX_GPIO_Port GPIOA
 #define SWDIO_Pin GPIO_PIN_13
 #define SWDIO_GPIO_Port GPIOA
 #define SWCLK_Pin GPIO_PIN_14
 #define SWCLK_GPIO_Port GPIOA
-#define LED_orange_Pin GPIO_PIN_2
-#define LED_orange_GPIO_Port GPIOD
 #define Motor1_EncoderA_Pin GPIO_PIN_4
 #define Motor1_EncoderA_GPIO_Port GPIOB
 #define Motor1_EncoderB_Pin GPIO_PIN_5
@@ -107,9 +115,6 @@ void Error_Handler(void);
 #define TIM_CHANNEL_MOTOR1_PWM TIM_CHANNEL_3
 #define TIM_CHANNEL_MOTOR2_PWM TIM_CHANNEL_4
 
-// 接收用串口及 DMA 马甲
-#define huart_receive huart1
-#define hdma_usart_receive_rx hdma_usart1_rx
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

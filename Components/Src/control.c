@@ -138,7 +138,13 @@ static float Control_Location(void)
     return control_val;
 }
 
-static void Control_LocationSpeed(void)
+// TODO 计算 delta v 的函数
+static void Control_SteerCompensation(void)
+{
+
+}
+
+static void Control_LocationSpeed(void) // TODO 改名字，以及加入转向补偿部分
 {
     static uint8_t control_location_count = 0;
     if (is_motor1_en == 1 || is_motor2_en == 1) // 电机在使能状态下才进行控制处理
@@ -173,8 +179,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) // 好像处理sysTi
 {
     if (htim == (&htim_PID_Interval)) // TIM7 用于产生 PID 执行时间间隔, 每 20ms 进入一次
     {
-        // TODO
+        // TODO 在合适的位置取得补偿值和设置标志位等
+#if IS_DEBUG_UART_TIME_FEEDBACK_ON && IS_DEBUG_UART_ON && IS_DEBUG_ON
         int32_t time = receive_time_ref;
+#endif // !IS_DEBUG_UART_TIME_FEEDBACK_ON
         Encoder_PulseGet();
         motor1_speed = ((float)encoder_motor1_pulsenum * 1000.0 * 60.0) / (PULSE_PER_REVOLUTION * PID_PERIOD);
         motor2_speed = ((float)encoder_motor2_pulsenum * 1000.0 * 60.0) / (PULSE_PER_REVOLUTION * PID_PERIOD);
@@ -223,16 +231,18 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) // 好像处理sysTi
                    pids.location.set,
                    debug_motor1_voltage,
                    debug_motor2_voltage);
+#if IS_DEBUG_UART_TIME_FEEDBACK_ON
             time -= receive_time_ref;
             printf("sent in %dms\r\n", time);
+#endif // !IS_DEBUG_UART_TIME_FEEDBACK_ON
         }
 #endif
     }
 
     else if (htim == (&htim_Debug_LED_Interval)) // 1s 进入一次TIM6的中断
     {
-#if IS_DEBUG_LED_ORANGE_ON && IS_DEBUG_ON
-        __DEGUG_LED_ORANGE_TOGGLE;
+#if IS_DEBUG_LED_RUN_ON && IS_DEBUG_ON
+        __DEGUG_LED_RUN_TOGGLE;
 #endif
     }
 }

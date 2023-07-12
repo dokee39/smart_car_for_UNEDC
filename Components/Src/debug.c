@@ -15,6 +15,7 @@
 #include "debug.h"
 #include "receive.h"
 #include "control.h"
+#include "stm32f1xx_it.h"
 
 #if IS_DEBUG_ON
 
@@ -289,7 +290,7 @@ void Debug_SetPIDbasedonReceive(int32_t timeout)
     memset(cmd, '\0', MainBuf_SIZE);
     while (receive_time_ref > 0)
     {
-        if (Receive_FindFirstVaildString(cmd_start, cmd_end, cmd) == RECEIVE_SUCCESS)
+        if (Receive_FindFirstVaildString(&uart_for_debug, cmd_start, cmd_end, cmd) == RECEIVE_SUCCESS)
         {
             if (cmd_information_find() == CMD_FIND_SUCCESS)
             {

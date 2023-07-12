@@ -17,9 +17,10 @@
 /**
  * 调试开关总览：
  * |---IS_DEBUG_ON -> 调试模式总开关
- *     |---IS_DEBUG_LED_ORANDE_ON -> LED_orange 调试 (每秒翻转一次，表示没有卡住)
- *     |---IS_DEBUG_UART_ON       -> 串口调试
+ *     |---IS_DEBUG_LED_RUN_ON -> LED_run 调试 (每秒翻转一次，表示没有卡住)
+ *     |---IS_DEBUG_UART_ON    -> 串口调试
  *     |   |---IS_DEBUG_UART_REAL_TIME_MONITOR_ON    -> 串口实时监控
+ *     |   |---IS_DEBUG_UART_TIME_FEEDBACK_ON        -> 显示 PID 计算及串口发送耗时
  *     |   |---IS_DEBUG_UART_CMD_FEEDBACK_ON         -> 串口调试时返回收到的命令
  *     |   |---IS_DEBUG_UART_PID_FEEDBACK_ON         -> 串口调试时返回当前全部的 PID 设置
  *     |   |---IS_DEBUG_UART_PID_LOOP_SPEED          -> 调试速度环时打开此开关
@@ -40,23 +41,24 @@
 #if IS_DEBUG_ON
 
 /* LED_green 调试 (每秒翻转一次，表示没有卡住) */
-#define IS_DEBUG_LED_ORANGE_ON 1
-#if IS_DEBUG_LED_ORANGE_ON
+#define IS_DEBUG_LED_RUN_ON 1
+#if IS_DEBUG_LED_RUN_ON
 
 // 打开 LED_green
-#define __DEGUG_LED_ORANGE_ON HAL_GPIO_WritePin(LED_orange_GPIO_Port, LED_orange_Pin, GPIO_PIN_RESET)
+#define __DEGUG_LED_RUN_ON HAL_GPIO_WritePin(LED_run_GPIO_Port, LED_run_Pin, GPIO_PIN_RESET)
 // 关闭 LED_green
-#define __DEGUG_LED_ORANGE_OFF HAL_GPIO_WritePin(LED_orange_GPIO_Port, LED_orange_Pin, GPIO_PIN_SET)
+#define __DEGUG_LED_RUN_OFF HAL_GPIO_WritePin(LED_run_GPIO_Port, LED_run_Pin, GPIO_PIN_SET)
 // 翻转 LED_green
-#define __DEGUG_LED_ORANGE_TOGGLE HAL_GPIO_TogglePin(LED_orange_GPIO_Port, LED_orange_Pin)
+#define __DEGUG_LED_RUN_TOGGLE HAL_GPIO_TogglePin(LED_run_GPIO_Port, LED_run_Pin)
 
 #endif // !IS_DEBUG_LED_GREEN_ON
 
 /* 串口调试 */
 #define IS_DEBUG_UART_ON 1
 #define IS_DEBUG_UART_REAL_TIME_MONITOR_ON 1
-#define IS_DEBUG_UART_CMD_FEEDBACK_ON 1
-#define IS_DEBUG_UART_PID_FEEDBACK_ON 1
+#define IS_DEBUG_UART_TIME_FEEDBACK_ON 0
+#define IS_DEBUG_UART_CMD_FEEDBACK_ON 0
+#define IS_DEBUG_UART_PID_FEEDBACK_ON 0
 // 下面分别调试 pid 各环的不能同时打开
 #define IS_DEBUG_UART_PID_LOOP_SPEED 0
 #define IS_DEBUG_UART_PID_LOOP_LOCATION_SPEED 1

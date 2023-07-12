@@ -16,18 +16,41 @@
 #define RxBuf_SIZE 64
 #define MainBuf_SIZE 128
 
+typedef struct
+{
+    UART_HandleTypeDef *huart;
+    DMA_HandleTypeDef *hdma;
+
+    uint8_t RxBuf[RxBuf_SIZE];
+    uint8_t MainBuf[MainBuf_SIZE];
+
+    // position used by callback function
+    uint16_t oldPos;
+    uint16_t newPos;
+
+    // mark the beginning and end of valid data
+    uint16_t head;
+    uint16_t tail;
+
+    uint8_t is_data_available;
+    uint8_t is_data_overwritten;
+} uart_receive_t;
+
 typedef enum 
 {
     RECEIVE_SUCCESS,
     RECEIVE_FAILURE
 } RECEIVE_STATUS_t;
 
-/* Time in milliseconds with systick*/
-extern int32_t receive_time_ref;
+/* 在此加入 uart, 并将其放入地址列表中 BEGIN */
+// C 文件中对应的也要修改
+extern uart_receive_t uart_for_debug;
+extern uart_receive_t uart_with_K210;
+/* 在此加入 uart, 并将其放入地址列表中 END */
 
-void Receive_BufInit(void);
-void Receive_BufReset(void);
-RECEIVE_STATUS_t Receive_FindFirstVaildString(char *cmd_start, char *cmd_end, char *pdata);
+void Receive_Init(uart_receive_t *puart_receive, UART_HandleTypeDef *huart, DMA_HandleTypeDef *hdma);
+void Receive_Reset(uart_receive_t *puart_receive);
+RECEIVE_STATUS_t Receive_FindFirstVaildString(uart_receive_t *puart_receive, char *cmd_start, char *cmd_end, char *pdata);
 
 
 
