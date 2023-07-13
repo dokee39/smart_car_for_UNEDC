@@ -3,6 +3,9 @@
 import sensor, image, lcd
 from machine import UART
 from fpioa_manager import fm
+import math
+
+l = 33
 
 fm.register(18, fm.fpioa.UART1_TX, force=True)
 fm.register(19, fm.fpioa.UART1_RX, force=True)
@@ -35,7 +38,7 @@ while True:
         for b in blobs_line:
             tmp = img.draw_rectangle(b[0:4])
             tmp = img.draw_cross(b[5], b[6])
-            uart1_send(160 - b[5])
+            delta_x = (160 - b[5]) * (22 / 320)
+            reciprocal_of_r = delta_x / (l * math.sqrt(pow(delta_x, 2) + pow(l, 2)))
+            uart1_send(reciprocal_of_r)
     lcd.display(img)
-
-

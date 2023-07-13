@@ -26,7 +26,7 @@
 
 /**************** 软件设置 **************************/
 #define CONTROL_LOCAATION_DIV 2 // 每隔多少次进行一次位置控制
-#define TARGET_SPEED_MAX 200
+#define TARGET_SPEED_MAX 100
 #define STEER_COMPENSATION_VALID_TIME (300u / TASK_CNT_K210_RECEIVE / TIM_TASK_INTERVAL) // 超过这个时间就把转向补偿 ban 掉
 
 #if IS_DEBUG_UART_ON && IS_DEBUG_ON
