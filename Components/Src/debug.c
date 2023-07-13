@@ -313,7 +313,7 @@ static CMD_FIND_STATUS_t pid_set(void)
  */
 void Debug_SetPID_basedon_Receive(void)
 {
-    receive_time_ref = 0; // TODO 是否会影响其他用到的？
+    receive_time_ref = 0;
     memset(cmd, '\0', MainBuf_SIZE);
     if (Receive_FindFirstVaildString(&uart_for_debug, cmd_start, cmd_end, cmd) == RECEIVE_SUCCESS)
     {

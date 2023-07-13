@@ -27,7 +27,8 @@
             "cstdint": "c",
             "bit": "c",
             "limits": "c",
-            "new": "c"
+            "new": "c",
+            "cstdio": "c"
         },
         "[yaml]": {
             "editor.insertSpaces": true,

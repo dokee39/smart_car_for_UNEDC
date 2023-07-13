@@ -14,6 +14,7 @@ def uart1_send(data):
     uart1.write(cmd);
 
 lcd.init()
+lcd.rotation(2)
 sensor.reset()
 sensor.set_pixformat(sensor.RGB565)
 sensor.set_framesize(sensor.QVGA) # 320x240
@@ -22,7 +23,7 @@ sensor.set_auto_gain(False) # must be turned off for color tracking
 sensor.set_auto_whitebal(False) # must be turned off for color tracking
 sensor.run(1)
 
-line_threshold = [(0, 100, 16, 127, 0, 75)] # 表示线的颜色范围
+line_threshold = [(0, 100, 10, 44, -10, 29)] # 表示线的颜色范围
 roi_line = [0,100,320,16] # 巡线敏感区
 
 while True:

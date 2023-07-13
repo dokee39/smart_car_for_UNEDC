@@ -68,6 +68,7 @@ static float motor1_speed_set = 0.0f; // 位置环的输出值
 static float motor2_speed_set = 0.0f;
 
 static float motor_dir_err = 0.0f; // 从 K210 获取的偏差值
+static float motor_steer_compensation_ratio = 0.0f;
 static float motor_speed_difference_set = 0.0f;
 
 static float motor1_location = 0.0f;
@@ -89,7 +90,7 @@ void Control_PID_Init(void)
     pid_struct_init(&pids.speed.motor1, 0, 0.5f, 0, MOTOR_DUTY_MAX, 2000, PID_SPEED_MOTOR1_P, PID_SPEED_MOTOR1_I, PID_SPEED_MOTOR1_D);
     pid_struct_init(&pids.speed.motor2, 0, 0.5f, 0, MOTOR_DUTY_MAX, 2000, PID_SPEED_MOTOR2_P, PID_SPEED_MOTOR2_I, PID_SPEED_MOTOR2_D);
     pid_struct_init(&pids.location, 0, 0.2f, 0, TARGET_SPEED_MAX, 0, PID_LOCATION_P, PID_LOCATION_I, PID_LOCATION_D);
-    pid_struct_init(&pids.steer_compensation, 0, 1.0f, 0, TARGET_SPEED_MAX, 0, PID_STEER_COMPENSATION_P, PID_STEER_COMPENSATION_I, PID_STEER_COMPENSATION_D);
+    pid_struct_init(&pids.steer_compensation, 0, 1.0f, 0, 1.0f, 0, PID_STEER_COMPENSATION_P, PID_STEER_COMPENSATION_I, PID_STEER_COMPENSATION_D);
     pids.steer_compensation.enable = 0;
 }
 
@@ -173,6 +174,7 @@ static float Control_Location(void)
 
 void Control_SetDirErr_basedon_Receive(void)
 {
+    // TODO 采用这种 ban 的方案好还是采用 pid 自己归零的方案好？
     float motor_dir_err_tmp;
     static uint8_t cnt = 0;
     memset(cmd, '\0', MainBuf_SIZE);
@@ -186,7 +188,7 @@ void Control_SetDirErr_basedon_Receive(void)
             is_received_from_K210 = 1;
         }
     }
-    if (cnt >= 10) // 当超过 200ms 没有读到数据时清空
+    if (cnt >= STEER_COMPENSATION_VALID_TIME) // 当超过 200ms 没有读到数据时清空
         {
             pid_disable(&pids.steer_compensation);
             motor_speed_difference_set = 0;
@@ -218,11 +220,11 @@ static void Control_Move(void)
         // 转向补偿部分
         if (is_received_from_K210)
         {
-            motor_speed_difference_set = Control_SteerCompensation();
+            motor_steer_compensation_ratio = Control_SteerCompensation();
             is_received_from_K210 = 0;
         }
-        motor1_speed_set -= motor_speed_difference_set;
-        motor2_speed_set += motor_speed_difference_set;
+        motor1_speed_set *= (1 + motor_speed_difference_set);
+        motor2_speed_set /= (1 - motor_speed_difference_set);
 
 // 调试速度环时, 保持速度环目标值不变
 #if !IS_DEBUG_UART_PID_LOOP_SPEED
@@ -246,6 +248,8 @@ void Control_Task(void)
 {
 #if IS_DEBUG_UART_TIME_FEEDBACK_ON && IS_DEBUG_UART_ON && IS_DEBUG_ON
     int32_t time = pid_cal_time_ref;
+    int32_t time_start;
+    int32_t time_end;
 #endif // !IS_DEBUG_UART_TIME_FEEDBACK_ON
     Encoder_PulseGet();
     motor1_speed = ((float)encoder_motor1_pulsenum * 1000.0 * 60.0) / (PULSE_PER_REVOLUTION * TIM_PID_INTERVAL);
@@ -284,6 +288,11 @@ void Control_Task(void)
 #if IS_DEBUG_UART_REAL_TIME_MONITOR_ON && IS_DEBUG_UART_ON && IS_DEBUG_ON
     if (is_UART_working == 0)
     {
+#if IS_DEBUG_UART_TIME_FEEDBACK_ON && IS_DEBUG_UART_ON && IS_DEBUG_ON
+        time_start = pid_cal_time_ref - time;
+        printf("printf start in %dms\r\n", time_start);
+#endif // !IS_DEBUG_UART_TIME_FEEDBACK_ON
+        motor_speed_difference_set = motor_steer_compensation_ratio * motor1_speed_set;
         printf("motor: %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f\r\n",
                motor1_speed,
                motor2_speed,
@@ -298,8 +307,8 @@ void Control_Task(void)
                debug_motor1_voltage,
                debug_motor2_voltage);
 #if IS_DEBUG_UART_TIME_FEEDBACK_ON && IS_DEBUG_UART_ON && IS_DEBUG_ON
-        time = pid_cal_time_ref - time;
-        printf("sent in %dms\r\n", time);
+        time_end = pid_cal_time_ref - time;
+        printf("printf end in %dms\r\n", time_end);
 #endif // !IS_DEBUG_UART_TIME_FEEDBACK_ON
     }
 #endif

@@ -46,7 +46,7 @@
 #if IS_DEBUG_UART_ON && IS_DEBUG_ON
 extern int32_t receive_time_ref;
 #endif
-#if IS_DEBUG_UART_PID_FEEDBACK_ON && IS_DEBUG_UART_ON && IS_DEBUG_ON
+#if IS_DEBUG_UART_TIME_FEEDBACK_ON && IS_DEBUG_UART_ON && IS_DEBUG_ON
 extern int32_t pid_cal_time_ref;
 #endif
 /* USER CODE END EM */

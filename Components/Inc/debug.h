@@ -35,12 +35,13 @@
 // <!motor1 speed target set: %f OK?>!               -> set
 // .......2.speed................................
 // ..motor..location.............................
+// ..motor..steer_compensation...................
 
 /* 调试模式总开关 */
 #define IS_DEBUG_ON 1
 #if IS_DEBUG_ON
 
-/* LED_green 调试 (每秒翻转一次，表示没有卡住) */
+/* LED_run 调试 (每秒翻转一次，表示没有卡住) */
 #define IS_DEBUG_LED_RUN_ON 1
 #if IS_DEBUG_LED_RUN_ON
 
@@ -50,13 +51,13 @@ void Debug_LED_run_Toggle(void);
 
 /* 串口调试 */
 #define IS_DEBUG_UART_ON 1
-#define IS_DEBUG_UART_REAL_TIME_MONITOR_ON 1
-#define IS_DEBUG_UART_TIME_FEEDBACK_ON 0
-#define IS_DEBUG_UART_CMD_FEEDBACK_ON 1
-#define IS_DEBUG_UART_PID_FEEDBACK_ON 1
+#define IS_DEBUG_UART_REAL_TIME_MONITOR_ON 1 // 串口实时监控
+#define IS_DEBUG_UART_TIME_FEEDBACK_ON 0     // 显示 PID 计算及串口发送耗时
+#define IS_DEBUG_UART_CMD_FEEDBACK_ON 0      // 串口调试时返回收到的命令
+#define IS_DEBUG_UART_PID_FEEDBACK_ON 0      // 串口调试时返回当前全部的 PID 设置
 // 下面分别调试 pid 各环的不能同时打开
-#define IS_DEBUG_UART_PID_LOOP_SPEED 0
-#define IS_DEBUG_UART_PID_LOOP_LOCATION_SPEED 1
+#define IS_DEBUG_UART_PID_LOOP_SPEED 0          // 调试速度环时打开此开关
+#define IS_DEBUG_UART_PID_LOOP_LOCATION_SPEED 1 // 调试位置速度环时打开此开关
 #if IS_DEBUG_UART_ON
 
 // 接收到信息的最大字符数
