@@ -71,6 +71,8 @@ void pid_struct_init(
     float ki,
     float kd);
 
+void pid_disable(pid_t *pid);
+
 float pid_calculate(struct pid *pid, float fdb, float ref);
 
 #if IS_DEBUG_UART_ON && IS_DEBUG_ON

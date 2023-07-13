@@ -110,7 +110,7 @@ RECEIVE_STATUS_t Receive_FindFirstVaildString(uart_receive_t *puart_receive, cha
                 indx_buf = 0;
             if (indx_buf == tail_copy)
             {
-                Receive_FlagReset(&uart_for_debug);
+                Receive_FlagReset(puart_receive);
                 return RECEIVE_FAILURE;
             }
         }
@@ -123,7 +123,7 @@ RECEIVE_STATUS_t Receive_FindFirstVaildString(uart_receive_t *puart_receive, cha
                 indx_buf = 0;
             if (indx_buf == tail_copy)
             {
-                Receive_FlagReset(&uart_for_debug);
+                Receive_FlagReset(puart_receive);
                 return RECEIVE_FAILURE;
             }
             if (puart_receive->MainBuf[indx_buf] != cmd_start[indx_cmd])
@@ -148,7 +148,7 @@ RECEIVE_STATUS_t Receive_FindFirstVaildString(uart_receive_t *puart_receive, cha
                 indx_buf = 0;
             if (indx_buf == tail_copy)
             {
-                Receive_FlagReset(&uart_for_debug);
+                Receive_FlagReset(puart_receive);
                 return RECEIVE_FAILURE;
             }
         }
@@ -162,7 +162,7 @@ RECEIVE_STATUS_t Receive_FindFirstVaildString(uart_receive_t *puart_receive, cha
                 indx_buf = 0;
             if (indx_buf == tail_copy)
             {
-                Receive_FlagReset(&uart_for_debug);
+                Receive_FlagReset(puart_receive);
                 return RECEIVE_FAILURE;
             }
             if (puart_receive->MainBuf[indx_buf] != cmd_end[indx_cmd])
@@ -198,7 +198,7 @@ RECEIVE_STATUS_t Receive_FindFirstVaildString(uart_receive_t *puart_receive, cha
 
         // 不必清空 MainBuf, 但如果没数据可以归零
         if (puart_receive->head == puart_receive->tail)
-            Receive_FlagReset(&uart_for_debug);
+            Receive_FlagReset(puart_receive);
 
         // 如果发生覆盖则舍弃已经拷贝的
         if (puart_receive->is_data_overwritten)
@@ -262,8 +262,8 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
         }
 
         /* start the DMA again */
-        HAL_UARTEx_ReceiveToIdle_DMA(&huart_for_debug, (uint8_t *)puart_receive->RxBuf, RxBuf_SIZE);
-        __HAL_DMA_DISABLE_IT(&hdma_usart_for_debug_rx, DMA_IT_HT);
+        HAL_UARTEx_ReceiveToIdle_DMA(puart_receive->huart, (uint8_t *)puart_receive->RxBuf, RxBuf_SIZE);
+        __HAL_DMA_DISABLE_IT(puart_receive->hdma, DMA_IT_HT);
 
         puart_receive->is_data_available = 1;
     }

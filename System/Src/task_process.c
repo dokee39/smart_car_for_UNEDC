@@ -16,12 +16,11 @@
 #include "tim.h"
 
 // 任务计数周期 (TIM_TASK_INTERVAL 的倍数)
-#define TASK_CNT_DEBUG_RECEIVE (50u / TIM_TASK_INTERVAL)
 #define TASK_CNT_K210_RECEIVE (20u / TIM_TASK_INTERVAL)
+#define TASK_CNT_DEBUG_RECEIVE (50u / TIM_TASK_INTERVAL)
 #define TASK_CNT_DEBUG_LED (640u / TIM_TASK_INTERVAL)
 
 TimesilceTaskObj task_K210_receive;
-
 #if IS_DEBUG_ON
 #if IS_DEBUG_UART_ON
 TimesilceTaskObj task_debug_receive;
@@ -34,8 +33,8 @@ TimesilceTaskObj task_LED_run;
 void TaskProcess_Init(void)
 {
 
-    // timeslice_task_init(&task_K210_receive, task2_hdl, 1, TASK_CNT_K210_RECEIVE); // TODO 
-    // timeslice_task_add(&task_K210_receive);
+    timeslice_task_init(&task_K210_receive, Control_SetDirErr_basedon_Receive, 1, TASK_CNT_K210_RECEIVE);
+    timeslice_task_add(&task_K210_receive);
 #if IS_DEBUG_ON
 #if IS_DEBUG_UART_ON
     timeslice_task_init(&task_debug_receive, Debug_SetPID_basedon_Receive, 2, TASK_CNT_DEBUG_RECEIVE);

@@ -21,6 +21,23 @@
 #include "debug.h"
 #include "receive.h"
 
+
+#define PID_SPEED_MOTOR1_P 1.7f
+#define PID_SPEED_MOTOR1_I 0.8f
+#define PID_SPEED_MOTOR1_D 0
+
+#define PID_SPEED_MOTOR2_P 1.75f
+#define PID_SPEED_MOTOR2_I 0.95f
+#define PID_SPEED_MOTOR2_D 0
+
+#define PID_LOCATION_P 10
+#define PID_LOCATION_I 0
+#define PID_LOCATION_D 0
+
+#define PID_STEER_COMPENSATION_P 0
+#define PID_STEER_COMPENSATION_I 0
+#define PID_STEER_COMPENSATION_D 0
+
 #if IS_DEBUG_UART_ON && IS_DEBUG_ON
 static float debug_motor1_voltage = 0.0f; // 真实电压值
 static float debug_motor2_voltage = 0.0f;
@@ -49,27 +66,30 @@ static float motor2_speed = 0.0f;
 static float motor1_speed_set = 0.0f; // 位置环的输出值
 static float motor2_speed_set = 0.0f;
 
-static float motor_speed_difference = 0.0f;
+static float motor_dir_err = 0.0f; // 从 K210 获取的偏差值
+static float motor_speed_difference_set = 0.0f;
 
 static float motor1_location = 0.0f;
 static float motor2_location = 0.0f;
 static float motor_location_average = 0.0f;
 static float motor_location_set = 0.0f; // 位置环设置的目标值
 
-static float motor1_voltage = 0.0f;     // 速度环的输出值
-static float motor2_voltage = 0.0f;     // 不是实际电压值, 只是确定 PWM 占空比的比较值
+static float motor1_voltage = 0.0f; // 速度环的输出值
+static float motor2_voltage = 0.0f; // 不是实际电压值, 只是确定 PWM 占空比的比较值
 
 static char *cmd_start = "<!"; // K210 命令包头
 static char *cmd_end = ">!";   // K210 命令包尾
 static char cmd[MainBuf_SIZE]; // 用于存放从 K210 收到的命令
+static uint8_t is_received_from_K210 = 0;
 
 void Control_PID_Init(void)
 {
     // &pid, input_max_err, input_min_err, integral_separate_err, maxout, intergral_limit, kp, ki, kd
-    pid_struct_init(&pids.speed.motor1, 0, 0.5f, 0, MOTOR_DUTY_MAX, 2000, 1.7f, 0.8f, 0);
-    pid_struct_init(&pids.speed.motor2, 0, 0.5f, 0, MOTOR_DUTY_MAX, 2000, 1.75f, 0.95f, 0);
-    pid_struct_init(&pids.location, 0, 0.2f, 0, TARGET_SPEED_MAX, 0, 10, 0, 0);
-    // TODO 初始化转向补偿 PID
+    pid_struct_init(&pids.speed.motor1, 0, 0.5f, 0, MOTOR_DUTY_MAX, 2000, PID_SPEED_MOTOR1_P, PID_SPEED_MOTOR1_I, PID_SPEED_MOTOR1_D);
+    pid_struct_init(&pids.speed.motor2, 0, 0.5f, 0, MOTOR_DUTY_MAX, 2000, PID_SPEED_MOTOR2_P, PID_SPEED_MOTOR2_I, PID_SPEED_MOTOR2_D);
+    pid_struct_init(&pids.location, 0, 0.2f, 0, TARGET_SPEED_MAX, 0, PID_LOCATION_P, PID_LOCATION_I, PID_LOCATION_D);
+    pid_struct_init(&pids.steer_compensation, 0, 1.0f, 0, TARGET_SPEED_MAX, 0, PID_STEER_COMPENSATION_P, PID_STEER_COMPENSATION_I, PID_STEER_COMPENSATION_D);
+    pids.steer_compensation.enable = 0;
 }
 
 #if IS_DEBUG_UART_PID_FEEDBACK_ON && IS_DEBUG_UART_ON && IS_DEBUG_ON
@@ -149,46 +169,39 @@ static float Control_Location(void)
     return control_val;
 }
 
-void Control_SetSteerCompensation_basedon_Receive(void)
+void Control_SetDirErr_basedon_Receive(void)
 {
-//     memset(cmd, '\0', MainBuf_SIZE);
-//     while (receive_time_ref > 0)
-//     {
-//         if (Receive_FindFirstVaildString(&uart_for_debug, cmd_start, cmd_end, cmd) == RECEIVE_SUCCESS)
-//         {
-//             if (cmd_information_find() == CMD_FIND_SUCCESS)
-//             {
-//                 is_UART_working = 1;
-
-// #if IS_DEBUG_UART_CMD_FEEDBACK_ON
-//                 cmd_feedback(timeout - receive_time_ref);
-// #endif // !IS_DEBUG_UART_CMD_FEEDBACK_ON
-
-//                 pid_set(); // TODO
-//                 printf("sent after %dms -->  PID_SET_OK!\r\n", timeout - receive_time_ref);
-
-// #if IS_DEBUG_UART_PID_FEEDBACK_ON
-//                 pid_feedback(timeout - receive_time_ref);
-// #endif // !IS_DEBUG_UART_PID_FEEDBACK_ON
-
-//                 is_UART_working = 0;
-//                 break;
-//             }
-//             else
-//             {
-//                 printf("sent after %dms -->  COMMAND_ERROR!\r\n", timeout - receive_time_ref);
-//             }
-//         }
-//     }
+    // TODO 加入标志位什么的，看纸上
+    float motor_dir_err_tmp;
+    static uint8_t cnt = 0;
+    memset(cmd, '\0', MainBuf_SIZE);
+    if (Receive_FindFirstVaildString(&uart_with_K210, cmd_start, cmd_end, cmd) == RECEIVE_SUCCESS)
+    {
+        if (sscanf(cmd, "%f", &motor_dir_err_tmp) != EOF)
+        {
+            motor_dir_err = motor_dir_err_tmp;
+            pids.steer_compensation.enable = 1;
+            cnt = 0;
+            is_received_from_K210 = 1;
+        }
+    }
+    if (cnt >= 10) // 当超过 200ms 没有读到数据时清空
+        {
+            pid_disable(&pids.steer_compensation);
+            motor_speed_difference_set = 0;
+            motor_dir_err = 0;
+        }
+    cnt++;
 }
 
 // TODO 计算 delta v 的函数
-static void Control_SteerCompensation(void)
+static float Control_SteerCompensation(void)
 {
-
+    float control_val = pid_calculate(&pids.steer_compensation, motor_dir_err, 0);
+    return control_val;
 }
 
-static void Control_LocationSpeed(void) // TODO 改名字，以及加入转向补偿部分
+static void Control_Move(void)
 {
     static uint8_t control_location_count = 0;
     if (is_motor1_en == 1 || is_motor2_en == 1) // 电机在使能状态下才进行控制处理
@@ -200,6 +213,15 @@ static void Control_LocationSpeed(void) // TODO 改名字，以及加入转向�
             motor1_speed_set = Control_Location();
             motor2_speed_set = motor1_speed_set;
         }
+
+        // 转向补偿部分
+        if (is_received_from_K210)
+        {
+            motor_speed_difference_set = Control_SteerCompensation();
+            is_received_from_K210 = 0;
+        }
+        motor1_speed_set -= motor_speed_difference_set;
+        motor2_speed_set += motor_speed_difference_set;
 
 // 调试速度环时, 保持速度环目标值不变
 #if !IS_DEBUG_UART_PID_LOOP_SPEED
@@ -221,62 +243,63 @@ static void Control_LocationSpeed(void) // TODO 改名字，以及加入转向�
 
 void Control_Task(void)
 {
-            // TODO 在合适的位置取得补偿值和设置标志位等
 #if IS_DEBUG_UART_TIME_FEEDBACK_ON && IS_DEBUG_UART_ON && IS_DEBUG_ON
-        int32_t time = receive_time_ref;
+    int32_t time = receive_time_ref;
 #endif // !IS_DEBUG_UART_TIME_FEEDBACK_ON
-        Encoder_PulseGet();
-        motor1_speed = ((float)encoder_motor1_pulsenum * 1000.0 * 60.0) / (PULSE_PER_REVOLUTION * TIM_PID_INTERVAL);
-        motor2_speed = ((float)encoder_motor2_pulsenum * 1000.0 * 60.0) / (PULSE_PER_REVOLUTION * TIM_PID_INTERVAL);
-        motor1_location = ((float)encoder_motor1_pulsenum_sum / PULSE_PER_REVOLUTION) * JOURNEY_PER_REVOLUTION;
-        motor2_location = ((float)encoder_motor2_pulsenum_sum / PULSE_PER_REVOLUTION) * JOURNEY_PER_REVOLUTION;
-        motor_location_average = (motor1_location + motor2_location) / 2.0f;
+    Encoder_PulseGet();
+    motor1_speed = ((float)encoder_motor1_pulsenum * 1000.0 * 60.0) / (PULSE_PER_REVOLUTION * TIM_PID_INTERVAL);
+    motor2_speed = ((float)encoder_motor2_pulsenum * 1000.0 * 60.0) / (PULSE_PER_REVOLUTION * TIM_PID_INTERVAL);
+    motor1_location = ((float)encoder_motor1_pulsenum_sum / PULSE_PER_REVOLUTION) * JOURNEY_PER_REVOLUTION;
+    motor2_location = ((float)encoder_motor2_pulsenum_sum / PULSE_PER_REVOLUTION) * JOURNEY_PER_REVOLUTION;
+    motor_location_average = (motor1_location + motor2_location) / 2.0f;
 
 // 调试速度环时用
 #if IS_DEBUG_UART_PID_LOOP_SPEED && IS_DEBUG_UART_ON && IS_DEBUG_ON
-        if (is_motor1_en == 1)
-        {
-            motor1_voltage = Control_Speed(MOTOR1);
+    if (is_motor1_en == 1)
+    {
+        motor1_voltage = Control_Speed(MOTOR1);
 #if IS_DEBUG_UART_REAL_TIME_MONITOR_ON && IS_DEBUG_UART_ON && IS_DEBUG_ON
-            motor1_voltage = (motor1_voltage > MOTOR_DUTY_MAX) ? MOTOR_DUTY_MAX : motor1_voltage;
-            debug_motor1_voltage = (motor1_voltage / PWM_COUNTER_PERIOD) * MOTOR_VOLTAGE;
+        motor1_voltage = (motor1_voltage > MOTOR_DUTY_MAX) ? MOTOR_DUTY_MAX : motor1_voltage;
+        debug_motor1_voltage = (motor1_voltage / PWM_COUNTER_PERIOD) * MOTOR_VOLTAGE;
 #endif
-        }
-        if (is_motor2_en == 1)
-        {
-            motor2_voltage = Control_Speed(MOTOR2);
+    }
+    if (is_motor2_en == 1)
+    {
+        motor2_voltage = Control_Speed(MOTOR2);
 #if IS_DEBUG_UART_REAL_TIME_MONITOR_ON && IS_DEBUG_UART_ON && IS_DEBUG_ON
-            motor2_voltage = (motor2_voltage > MOTOR_DUTY_MAX) ? MOTOR_DUTY_MAX : motor2_voltage;
-            debug_motor2_voltage = (motor2_voltage / PWM_COUNTER_PERIOD) * MOTOR_VOLTAGE;
+        motor2_voltage = (motor2_voltage > MOTOR_DUTY_MAX) ? MOTOR_DUTY_MAX : motor2_voltage;
+        debug_motor2_voltage = (motor2_voltage / PWM_COUNTER_PERIOD) * MOTOR_VOLTAGE;
 #endif
-        }
+    }
 #endif // !IS_DEBUG_UART_PID_LOOP_SPEED && IS_DEBUG_UART_ON && IS_DEBUG_ON
 
 // 调试位置速度环时用
 #if IS_DEBUG_UART_PID_LOOP_LOCATION_SPEED && IS_DEBUG_UART_ON && IS_DEBUG_ON
-        Control_LocationSpeed();
+    Control_Move();
 #endif // !IS_DEBUG_UART_PID_LOOP_LOCATION_SPEED && IS_DEBUG_UART_ON && IS_DEBUG_ON
 
-        Motor_Output((int16_t)motor1_voltage, (int16_t)motor2_voltage);
+    Motor_Output((int16_t)motor1_voltage, (int16_t)motor2_voltage);
 
 #if IS_DEBUG_UART_REAL_TIME_MONITOR_ON && IS_DEBUG_UART_ON && IS_DEBUG_ON
-        if (is_UART_working == 0)
-        {
-            printf("motor: %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f\r\n",
-                   motor1_speed,
-                   motor2_speed,
-                   pids.speed.motor1.set,
-                   pids.speed.motor2.set,
-                   motor1_location,
-                   motor2_location,
-                   motor_location_average,
-                   pids.location.set,
-                   debug_motor1_voltage,
-                   debug_motor2_voltage);
+    if (is_UART_working == 0)
+    {
+        printf("motor: %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f\r\n",
+               motor1_speed,
+               motor2_speed,
+               pids.speed.motor1.set,
+               pids.speed.motor2.set,
+               motor_dir_err, 
+               motor_speed_difference_set,
+               motor1_location,
+               motor2_location,
+               motor_location_average,
+               pids.location.set,
+               debug_motor1_voltage,
+               debug_motor2_voltage);
 #if IS_DEBUG_UART_TIME_FEEDBACK_ON
-            time -= receive_time_ref;
-            printf("sent in %dms\r\n", time);
+        time -= receive_time_ref;
+        printf("sent in %dms\r\n", time);
 #endif // !IS_DEBUG_UART_TIME_FEEDBACK_ON
-        }
+    }
 #endif
 }

@@ -31,6 +31,7 @@
 #endif
 #include "control.h"
 #include "motor.h"
+#include "task_process.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -117,6 +118,7 @@ int main(void)
 
 #if IS_DEBUG_UART_ON && IS_DEBUG_ON
     Receive_Init(&uart_for_debug, &huart_for_debug, &hdma_usart_for_debug_rx);
+    Receive_Init(&uart_with_K210, &huart_with_K210, &hdma_usart_with_K210_rx);
 
 #if IS_DEBUG_UART_PID_LOOP_SPEED || IS_DEBUG_UART_PID_LOOP_LOCATION_SPEED
     Motor_Enable(MOTOR1);
@@ -135,10 +137,6 @@ int main(void)
     /* USER CODE BEGIN WHILE */
     while (1)
     {
-        // TODO 接收及处理 K210 传递的值
-        // TODO 不能这样轮询, 想想其他方案 (任务链表？)
-        // TODO debug 的也要改
-
 #if IS_DEBUG_IN_MAIN_C_ON
         if (pids.speed.motor1.set <= 1 && pids.speed.motor1.set >= -1)
         {

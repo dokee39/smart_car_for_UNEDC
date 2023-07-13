@@ -298,7 +298,7 @@ void Debug_SetPID_basedon_Receive(void)
             cmd_feedback(timeout - receive_time_ref);
 #endif // !IS_DEBUG_UART_CMD_FEEDBACK_ON
 
-            pid_set(); // TODO
+            pid_set(); // TODO 修改 PID debug 的返回值 // TODO PID 的环多加一个
             printf("sent after %dms -->  PID_SET_OK!\r\n", -receive_time_ref);
 
 #if IS_DEBUG_UART_PID_FEEDBACK_ON

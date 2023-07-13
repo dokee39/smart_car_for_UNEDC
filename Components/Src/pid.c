@@ -67,6 +67,13 @@ static void pid_reset(pid_t *pid, float kp, float ki, float kd)
     pid->out = 0;
 }
 
+void pid_disable(pid_t *pid)
+{
+    pid->enable = 0;
+    pid->err = 0;
+    pid->iout = 0;
+}
+
 /**
  * @brief     initialize pid parameter
  * @retval    none

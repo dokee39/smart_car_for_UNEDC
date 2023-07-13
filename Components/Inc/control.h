@@ -55,7 +55,7 @@ extern pids_t pids;
 #endif // !IS_DEBUG_UART_ON && IS_DEBUG_ON
 
 void Control_PID_Init(void);
-void Control_SetSteerCompensation_basedon_Receive(void);
+void Control_SetDirErr_basedon_Receive(void);
 void Control_Task(void);
 
 #if IS_DEBUG_UART_PID_FEEDBACK_ON && IS_DEBUG_UART_ON && IS_DEBUG_ON
