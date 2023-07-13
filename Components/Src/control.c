@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "debug.h"
+#include "stm32f1xx_it.h"
 #include "receive.h"
 
 
@@ -126,6 +127,7 @@ void Control_PIDs_Get(float *ppids)
     pid_get(&pids.speed.motor1, &ppids[0]);
     pid_get(&pids.speed.motor2, &ppids[9]);
     pid_get(&pids.location, &ppids[18]);
+    pid_get(&pids.steer_compensation, &ppids[27]);
 }
 #endif // !IS_DEBUG_UART_PID_FEEDBACK_ON && IS_DEBUG_UART_ON && IS_DEBUG_ON
 
@@ -171,7 +173,6 @@ static float Control_Location(void)
 
 void Control_SetDirErr_basedon_Receive(void)
 {
-    // TODO 加入标志位什么的，看纸上
     float motor_dir_err_tmp;
     static uint8_t cnt = 0;
     memset(cmd, '\0', MainBuf_SIZE);
@@ -194,7 +195,7 @@ void Control_SetDirErr_basedon_Receive(void)
     cnt++;
 }
 
-// TODO 计算 delta v 的函数
+
 static float Control_SteerCompensation(void)
 {
     float control_val = pid_calculate(&pids.steer_compensation, motor_dir_err, 0);
@@ -244,7 +245,7 @@ static void Control_Move(void)
 void Control_Task(void)
 {
 #if IS_DEBUG_UART_TIME_FEEDBACK_ON && IS_DEBUG_UART_ON && IS_DEBUG_ON
-    int32_t time = receive_time_ref;
+    int32_t time = pid_cal_time_ref;
 #endif // !IS_DEBUG_UART_TIME_FEEDBACK_ON
     Encoder_PulseGet();
     motor1_speed = ((float)encoder_motor1_pulsenum * 1000.0 * 60.0) / (PULSE_PER_REVOLUTION * TIM_PID_INTERVAL);
@@ -296,8 +297,8 @@ void Control_Task(void)
                pids.location.set,
                debug_motor1_voltage,
                debug_motor2_voltage);
-#if IS_DEBUG_UART_TIME_FEEDBACK_ON
-        time -= receive_time_ref;
+#if IS_DEBUG_UART_TIME_FEEDBACK_ON && IS_DEBUG_UART_ON && IS_DEBUG_ON
+        time = pid_cal_time_ref - time;
         printf("sent in %dms\r\n", time);
 #endif // !IS_DEBUG_UART_TIME_FEEDBACK_ON
     }

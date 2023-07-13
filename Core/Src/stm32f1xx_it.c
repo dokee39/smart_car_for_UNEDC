@@ -45,7 +45,12 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
+#if IS_DEBUG_UART_ON && IS_DEBUG_ON
 int32_t receive_time_ref;
+#endif
+#if IS_DEBUG_UART_PID_FEEDBACK_ON && IS_DEBUG_UART_ON && IS_DEBUG_ON
+int32_t pid_cal_time_ref;
+#endif
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -197,8 +202,12 @@ void SysTick_Handler(void)
   HAL_IncTick();
   /* USER CODE BEGIN SysTick_IRQn 1 */
 #if IS_DEBUG_UART_ON && IS_DEBUG_ON
-    receive_time_ref--;
+    receive_time_ref++;
 #endif
+#if IS_DEBUG_UART_PID_FEEDBACK_ON && IS_DEBUG_UART_ON && IS_DEBUG_ON
+    pid_cal_time_ref++;
+#endif
+
   /* USER CODE END SysTick_IRQn 1 */
 }
 

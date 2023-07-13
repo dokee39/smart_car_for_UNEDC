@@ -12,6 +12,11 @@
 #ifndef _TASK_PROCESS_H_
 #define _TASK_PROCESS_H_
 
+// 任务计数周期 (TIM_TASK_INTERVAL 的倍数)
+#define TASK_CNT_K210_RECEIVE (20u / TIM_TASK_INTERVAL)
+#define TASK_CNT_DEBUG_RECEIVE (50u / TIM_TASK_INTERVAL)
+#define TASK_CNT_DEBUG_LED (640u / TIM_TASK_INTERVAL)
+
 void TaskProcess_Init(void);
 
 #endif

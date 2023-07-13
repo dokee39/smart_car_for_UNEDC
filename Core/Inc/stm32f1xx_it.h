@@ -42,8 +42,13 @@
 
 /* Exported macro ------------------------------------------------------------*/
 /* USER CODE BEGIN EM */
-// 每 1ms 减一, 给串口接收作为参考用来查看是否超时, 注意这个变量不能被同时使用
+// 每 1ms 加一, 给串口接收作为参考用来查看是否超时, 注意这个变量不能被同时使用
+#if IS_DEBUG_UART_ON && IS_DEBUG_ON
 extern int32_t receive_time_ref;
+#endif
+#if IS_DEBUG_UART_PID_FEEDBACK_ON && IS_DEBUG_UART_ON && IS_DEBUG_ON
+extern int32_t pid_cal_time_ref;
+#endif
 /* USER CODE END EM */
 
 /* Exported functions prototypes ---------------------------------------------*/

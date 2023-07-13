@@ -15,6 +15,7 @@
 #include "motor.h"
 #include "pid.h"
 #include "debug.h"
+#include "task_process.h"
 
 /**************** 硬件信息 **************************/
 #define ENCODER_RESOLUTION 13                                                  // 编码器物理分辨率 (磁极数)
@@ -26,7 +27,7 @@
 /**************** 软件设置 **************************/
 #define CONTROL_LOCAATION_DIV 2 // 每隔多少次进行一次位置控制
 #define TARGET_SPEED_MAX 200
-#define STEER_COMPENSATION_VALID_TIME 300 // 超过这个时间就把转向补偿 ban 掉, 为 Debug_SetSteerCompensationbasedonReceive() 的参数
+#define STEER_COMPENSATION_VALID_TIME (300u / TASK_CNT_K210_RECEIVE / TIM_TASK_INTERVAL) // 超过这个时间就把转向补偿 ban 掉
 
 #if IS_DEBUG_UART_ON && IS_DEBUG_ON
 // pid 环名称
@@ -34,6 +35,7 @@ typedef enum
 {
     PID_LOOP_SPEED,
     PID_LOOP_LOCATION,
+    PID_LOOP_STEER_COMPENSATION
 } PID_LOOP_t;
 
 // 一个分电机的 pid 的结构体,
