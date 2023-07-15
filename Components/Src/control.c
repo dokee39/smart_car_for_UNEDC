@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include "debug.h"
 #include "stm32f1xx_it.h"
 #include "receive.h"
@@ -34,9 +35,9 @@
 #define PID_LOCATION_I 0.0f
 #define PID_LOCATION_D 0.0f
 
-#define PID_STEER_COMPENSATION_P 25.0f
-#define PID_STEER_COMPENSATION_I 0.03f
-#define PID_STEER_COMPENSATION_D 0.0f
+#define PID_STEER_COMPENSATION_P 20.0f
+#define PID_STEER_COMPENSATION_I 1.4f
+#define PID_STEER_COMPENSATION_D 30.0f
 
 #if IS_DEBUG_UART_ON && IS_DEBUG_ON
 static float debug_motor1_voltage = 0.0f; // 真实电压值
@@ -67,7 +68,7 @@ static float motor_speed_set = 0.0f; // 位置环的输出值
 static float motor1_speed_set = 0.0f;
 static float motor2_speed_set = 0.0f;
 
-static float motor_dir_err = 0.0f; // 从 K210 获取的偏差值
+static float motor_dir_err[STEER_COMPENSATION_DELAY] = {0.0f}; // 从 K210 获取的偏差值, 因为需要延时响应所以多记录几个
 static float motor_steer_compensation_ratio = 0.0f;
 static float motor_speed_difference_set = 0.0f;
 
@@ -82,16 +83,29 @@ static float motor2_voltage = 0.0f; // 不是实际电压值, 只是确定 PWM �
 static char *cmd_start = "<!"; // K210 命令包头
 static char *cmd_end = ">!";   // K210 命令包尾
 static char cmd[MainBuf_SIZE]; // 用于存放从 K210 收到的命令
-static uint8_t is_received_from_K210 = 0;
 
 void Control_PID_Init(void)
 {
-    // &pid, input_max_err, input_min_err, integral_separate_err, maxout, intergral_limit, kp, ki, kd
-    pid_struct_init(&pids.speed.motor1, 0.0f, 0.5f, 0.0f, MOTOR_DUTY_MAX, 2000, PID_SPEED_MOTOR1_P, PID_SPEED_MOTOR1_I, PID_SPEED_MOTOR1_D);
-    pid_struct_init(&pids.speed.motor2, 0.0f, 0.5f, 0.0f, MOTOR_DUTY_MAX, 2000, PID_SPEED_MOTOR2_P, PID_SPEED_MOTOR2_I, PID_SPEED_MOTOR2_D);
-    pid_struct_init(&pids.location, 0.0f, 0.2f, 0.5f, TARGET_SPEED_MAX, 0.0f, PID_LOCATION_P, PID_LOCATION_I, PID_LOCATION_D);
-    pid_struct_init(&pids.steer_compensation, 0.01f, 0.0002f, 0.0f, 0.7f, 2.0f, PID_STEER_COMPENSATION_P, PID_STEER_COMPENSATION_I, PID_STEER_COMPENSATION_D);
-    pids.steer_compensation.enable = 0;
+    // &pid, 
+    // input_max_err, input_min_err, integral_separate_err, 
+    // maxout, intergral_limit, 
+    // kp, ki, kd
+    pid_struct_init(&pids.speed.motor1,
+                    0.0f, 0.5f, 0.0f,
+                    MOTOR_DUTY_MAX, 2000,
+                    PID_SPEED_MOTOR1_P, PID_SPEED_MOTOR1_I, PID_SPEED_MOTOR1_D);
+    pid_struct_init(&pids.speed.motor2,
+                    0.0f, 0.5f, 0.0f,
+                    MOTOR_DUTY_MAX, 2000,
+                    PID_SPEED_MOTOR2_P, PID_SPEED_MOTOR2_I, PID_SPEED_MOTOR2_D);
+    pid_struct_init(&pids.location,
+                    0.0f, 0.2f, 0.5f,
+                    TARGET_SPEED_MAX, 0.0f,
+                    PID_LOCATION_P, PID_LOCATION_I, PID_LOCATION_D);
+    pid_struct_init(&pids.steer_compensation,
+                    0.01f, 0.0002f, 0.0f,
+                    MOTOR_DIR_ERR_VALID_MAX, 0.0f,
+                    PID_STEER_COMPENSATION_P, PID_STEER_COMPENSATION_I, PID_STEER_COMPENSATION_D);
 }
 
 #if IS_DEBUG_UART_PID_FEEDBACK_ON && IS_DEBUG_UART_ON && IS_DEBUG_ON
@@ -165,36 +179,50 @@ static float Control_Location(void)
     return control_val;
 }
 
-void Control_SetDirErr_basedon_Receive(void)
+static float Control_SteerCompensation(void)
 {
-    // TODO 采用这种 ban 的方案好还是采用 pid 自己归零的方案好？
-    float motor_dir_err_tmp;
+    float control_val = pid_calculate(&pids.steer_compensation, motor_dir_err[0], 0);
+    return control_val;
+}
+
+void Control_SetSteerCompensation_basedon_Receive(void)
+{
+    float motor_dir_err_tmp; // 防止直接用 sscanf 读进去导致发生错误
+    static uint8_t is_received_from_K210[STEER_COMPENSATION_DELAY] = {0};
     static uint8_t cnt = 0;
+
     memset(cmd, '\0', MainBuf_SIZE);
+    is_received_from_K210[STEER_COMPENSATION_DELAY - 1] = 0;
     if (Receive_FindFirstVaildString(&uart_with_K210, cmd_start, cmd_end, cmd) == RECEIVE_SUCCESS)
     {
         if (sscanf(cmd, "%f", &motor_dir_err_tmp) != EOF)
         {
-            motor_dir_err = motor_dir_err_tmp;
-            pids.steer_compensation.enable = 1;
-            cnt = 0;
-            is_received_from_K210 = 1;
+            if (motor_dir_err_tmp > -MOTOR_DIR_ERR_VALID_MAX && motor_dir_err_tmp < MOTOR_DIR_ERR_VALID_MAX)
+            {
+                motor_dir_err[STEER_COMPENSATION_DELAY - 1] = motor_dir_err_tmp;
+                is_received_from_K210[STEER_COMPENSATION_DELAY - 1] = 1;
+                cnt = 0;
+            }
         }
     }
-    if (cnt >= STEER_COMPENSATION_VALID_TIME) // 当超过 200ms 没有读到数据时清空
+
+    if (is_received_from_K210[0])
+        motor_steer_compensation_ratio = Control_SteerCompensation();
+
+    for (uint8_t i = 1; i < STEER_COMPENSATION_DELAY; i++)
     {
-        pid_disable(&pids.steer_compensation);
+        motor_dir_err[i - 1] = motor_dir_err[i];
+        is_received_from_K210[i - 1] = is_received_from_K210[i];
+    }
+
+    if (cnt >= STEER_COMPENSATION_VALID_TIME) // 当超过 1000ms 没有读到数据时清空
+    {
+        cnt = 0;
+        pid_clear(&pids.steer_compensation);
         motor_steer_compensation_ratio = 0;
         motor_speed_difference_set = 0;
-        motor_dir_err = 0;
     }
     cnt++;
-}
-
-static float Control_SteerCompensation(void)
-{
-    float control_val = pid_calculate(&pids.steer_compensation, motor_dir_err, 0);
-    return control_val;
 }
 
 static void Control_Move(void)
@@ -212,23 +240,18 @@ static void Control_Move(void)
         }
 
         // 转向补偿部分
-        if (is_received_from_K210)
-        {
-            motor_steer_compensation_ratio = Control_SteerCompensation();
-            is_received_from_K210 = 0;
-        }
         motor1_speed_set = motor_speed_set * (1.0f + motor_steer_compensation_ratio);
         motor2_speed_set = motor_speed_set * (1.0f - motor_steer_compensation_ratio);
 
         // 速度变化太快会打滑, 故采用此策略
-        if (motor1_speed_set - motor1_speed_set_tmp > DETA_SPEED_MAX)
-            motor1_speed_set = motor1_speed_set_tmp + DETA_SPEED_MAX;
-        else if (motor1_speed_set - motor1_speed_set_tmp < -DETA_SPEED_MAX)
-            motor1_speed_set = motor1_speed_set_tmp - DETA_SPEED_MAX;
-        if (motor2_speed_set - motor2_speed_set_tmp > DETA_SPEED_MAX)
-            motor2_speed_set = motor2_speed_set_tmp + DETA_SPEED_MAX;
-        else if (motor2_speed_set - motor2_speed_set_tmp < -DETA_SPEED_MAX)
-            motor2_speed_set = motor2_speed_set_tmp - DETA_SPEED_MAX;
+        if (motor1_speed_set - motor1_speed_set_tmp > DELTA_SPEED_MAX)
+            motor1_speed_set = motor1_speed_set_tmp + DELTA_SPEED_MAX;
+        else if (motor1_speed_set - motor1_speed_set_tmp < -DELTA_SPEED_MAX)
+            motor1_speed_set = motor1_speed_set_tmp - DELTA_SPEED_MAX;
+        if (motor2_speed_set - motor2_speed_set_tmp > DELTA_SPEED_MAX)
+            motor2_speed_set = motor2_speed_set_tmp + DELTA_SPEED_MAX;
+        else if (motor2_speed_set - motor2_speed_set_tmp < -DELTA_SPEED_MAX)
+            motor2_speed_set = motor2_speed_set_tmp - DELTA_SPEED_MAX;
 
 // 调试速度环时, 保持速度环目标值不变
 #if !IS_DEBUG_UART_PID_LOOP_SPEED
@@ -302,7 +325,7 @@ void Control_Task(void)
                motor2_speed,
                pids.speed.motor1.set,
                pids.speed.motor2.set,
-               motor_dir_err,
+               motor_dir_err[STEER_COMPENSATION_DELAY - 1] * 100,
                motor_speed_difference_set,
                motor1_location,
                motor2_location,

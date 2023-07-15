@@ -78,11 +78,12 @@ void Receive_Reset(uart_receive_t *puart_receive)
 
 /**
  * @brief 从 MainBuf 中找到被起始和终止命令包裹的字符串并拷贝到 pdata 中
- *
- * @param cmd_start
- * @param cmd_end
+ * 
+ * @param puart_receive 
+ * @param cmd_start 
+ * @param cmd_end 
  * @param pdata 长度必须大于等于 MainBuf_SIZE
- * @return receive_state_t
+ * @return RECEIVE_STATUS_t 
  */
 RECEIVE_STATUS_t Receive_FindFirstVaildString(uart_receive_t *puart_receive, char *cmd_start, char *cmd_end, char *pdata)
 {
