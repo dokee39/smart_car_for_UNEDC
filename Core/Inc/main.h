@@ -110,7 +110,7 @@ void Error_Handler(void);
 #define htim_Task_Interval htim6
 
 // 定时器时间间隔
-#define TIM_PID_INTERVAL 20u
+#define TIM_PID_INTERVAL 20.0f
 #define TIM_TASK_INTERVAL 10u
 
 // 定时器通道马甲

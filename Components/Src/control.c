@@ -22,20 +22,20 @@
 #include "stm32f1xx_it.h"
 #include "receive.h"
 
-#define PID_SPEED_MOTOR1_P 1.7f
-#define PID_SPEED_MOTOR1_I 0.8f
+#define PID_SPEED_MOTOR1_P 6.7f
+#define PID_SPEED_MOTOR1_I 2.2f
 #define PID_SPEED_MOTOR1_D 0.0f
 
-#define PID_SPEED_MOTOR2_P 1.75f
-#define PID_SPEED_MOTOR2_I 0.95f
+#define PID_SPEED_MOTOR2_P 7.3f
+#define PID_SPEED_MOTOR2_I 2.3f
 #define PID_SPEED_MOTOR2_D 0.0f
 
-#define PID_LOCATION_P 10.0f
+#define PID_LOCATION_P 15.0f
 #define PID_LOCATION_I 0.0f
 #define PID_LOCATION_D 0.0f
 
-#define PID_STEER_COMPENSATION_P 16.0f
-#define PID_STEER_COMPENSATION_I 0.0f
+#define PID_STEER_COMPENSATION_P 25.0f
+#define PID_STEER_COMPENSATION_I 0.03f
 #define PID_STEER_COMPENSATION_D 0.0f
 
 #if IS_DEBUG_UART_ON && IS_DEBUG_ON
@@ -87,10 +87,10 @@ static uint8_t is_received_from_K210 = 0;
 void Control_PID_Init(void)
 {
     // &pid, input_max_err, input_min_err, integral_separate_err, maxout, intergral_limit, kp, ki, kd
-    pid_struct_init(&pids.speed.motor1, 0, 0.5f, 0, MOTOR_DUTY_MAX, 2000, PID_SPEED_MOTOR1_P, PID_SPEED_MOTOR1_I, PID_SPEED_MOTOR1_D);
-    pid_struct_init(&pids.speed.motor2, 0, 0.5f, 0, MOTOR_DUTY_MAX, 2000, PID_SPEED_MOTOR2_P, PID_SPEED_MOTOR2_I, PID_SPEED_MOTOR2_D);
-    pid_struct_init(&pids.location, 0, 0.2f, 0, TARGET_SPEED_MAX, 0, PID_LOCATION_P, PID_LOCATION_I, PID_LOCATION_D);
-    pid_struct_init(&pids.steer_compensation, 0.01f, 0.0002f, 0, 0.7f, 2.0f, PID_STEER_COMPENSATION_P, PID_STEER_COMPENSATION_I, PID_STEER_COMPENSATION_D);
+    pid_struct_init(&pids.speed.motor1, 0.0f, 0.5f, 0.0f, MOTOR_DUTY_MAX, 2000, PID_SPEED_MOTOR1_P, PID_SPEED_MOTOR1_I, PID_SPEED_MOTOR1_D);
+    pid_struct_init(&pids.speed.motor2, 0.0f, 0.5f, 0.0f, MOTOR_DUTY_MAX, 2000, PID_SPEED_MOTOR2_P, PID_SPEED_MOTOR2_I, PID_SPEED_MOTOR2_D);
+    pid_struct_init(&pids.location, 0.0f, 0.2f, 0.5f, TARGET_SPEED_MAX, 0.0f, PID_LOCATION_P, PID_LOCATION_I, PID_LOCATION_D);
+    pid_struct_init(&pids.steer_compensation, 0.01f, 0.0002f, 0.0f, 0.7f, 2.0f, PID_STEER_COMPENSATION_P, PID_STEER_COMPENSATION_I, PID_STEER_COMPENSATION_D);
     pids.steer_compensation.enable = 0;
 }
 
@@ -200,6 +200,8 @@ static float Control_SteerCompensation(void)
 static void Control_Move(void)
 {
     static uint8_t control_location_count = 0;
+    float motor1_speed_set_tmp = motor1_speed_set;
+    float motor2_speed_set_tmp = motor2_speed_set;
     if (is_motor1_en == 1 || is_motor2_en == 1) // 电机在使能状态下才进行控制处理
     {
         control_location_count++;
@@ -217,6 +219,16 @@ static void Control_Move(void)
         }
         motor1_speed_set = motor_speed_set * (1.0f + motor_steer_compensation_ratio);
         motor2_speed_set = motor_speed_set * (1.0f - motor_steer_compensation_ratio);
+
+        // 速度变化太快会打滑, 故采用此策略
+        if (motor1_speed_set - motor1_speed_set_tmp > DETA_SPEED_MAX)
+            motor1_speed_set = motor1_speed_set_tmp + DETA_SPEED_MAX;
+        else if (motor1_speed_set - motor1_speed_set_tmp < -DETA_SPEED_MAX)
+            motor1_speed_set = motor1_speed_set_tmp - DETA_SPEED_MAX;
+        if (motor2_speed_set - motor2_speed_set_tmp > DETA_SPEED_MAX)
+            motor2_speed_set = motor2_speed_set_tmp + DETA_SPEED_MAX;
+        else if (motor2_speed_set - motor2_speed_set_tmp < -DETA_SPEED_MAX)
+            motor2_speed_set = motor2_speed_set_tmp - DETA_SPEED_MAX;
 
 // 调试速度环时, 保持速度环目标值不变
 #if !IS_DEBUG_UART_PID_LOOP_SPEED
@@ -244,8 +256,8 @@ void Control_Task(void)
     int32_t time_end;
 #endif // !IS_DEBUG_UART_TIME_FEEDBACK_ON
     Encoder_PulseGet();
-    motor1_speed = ((float)encoder_motor1_pulsenum * 1000.0 * 60.0) / (PULSE_PER_REVOLUTION * TIM_PID_INTERVAL);
-    motor2_speed = ((float)encoder_motor2_pulsenum * 1000.0 * 60.0) / (PULSE_PER_REVOLUTION * TIM_PID_INTERVAL);
+    motor1_speed = ((float)encoder_motor1_pulsenum * 1000.0f * 60.0f) / (PULSE_PER_REVOLUTION * TIM_PID_INTERVAL);
+    motor2_speed = ((float)encoder_motor2_pulsenum * 1000.0f * 60.0f) / (PULSE_PER_REVOLUTION * TIM_PID_INTERVAL);
     motor1_location = ((float)encoder_motor1_pulsenum_sum / PULSE_PER_REVOLUTION) * JOURNEY_PER_REVOLUTION;
     motor2_location = ((float)encoder_motor2_pulsenum_sum / PULSE_PER_REVOLUTION) * JOURNEY_PER_REVOLUTION;
     motor_location_average = (motor1_location + motor2_location) / 2.0f;

@@ -18,16 +18,17 @@
 #include "task_process.h"
 
 /**************** 硬件信息 **************************/
-#define ENCODER_RESOLUTION 13                                                  // 编码器物理分辨率 (磁极数)
-#define REDUCTION_RATIO 30                                                     // 电机减速比
-#define PULSE_PER_REVOLUTION (float)(ENCODER_RESOLUTION * REDUCTION_RATIO * 4) // 电机每转产生的脉冲数
+#define ENCODER_RESOLUTION 13.0f                                                  // 编码器物理分辨率 (磁极数)
+#define REDUCTION_RATIO 30.0f                                                     // 电机减速比
+#define PULSE_PER_REVOLUTION (float)(ENCODER_RESOLUTION * REDUCTION_RATIO * 4.0f) // 电机每转产生的脉冲数
 #define WHEEL_DIAMETER 4.8f                                                    // 轮子直径
 #define JOURNEY_PER_REVOLUTION (float)(WHEEL_DIAMETER * 3.1416f)               // 轮子每转走的路程
 
 /**************** 软件设置 **************************/
 #define CONTROL_LOCAATION_DIV 2 // 每隔多少次进行一次位置控制
-#define TARGET_SPEED_MAX 100
-#define STEER_COMPENSATION_VALID_TIME (300u / TASK_CNT_K210_RECEIVE / TIM_TASK_INTERVAL) // 超过这个时间就把转向补偿 ban 掉
+#define TARGET_SPEED_MAX 100.0f
+#define DETA_SPEED_MAX 30.0f
+#define STEER_COMPENSATION_VALID_TIME (1000u / TASK_CNT_K210_RECEIVE / TIM_TASK_INTERVAL) // 超过这个时间就把转向补偿 ban 掉
 
 #if IS_DEBUG_UART_ON && IS_DEBUG_ON
 // pid 环名称

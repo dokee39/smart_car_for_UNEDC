@@ -41,4 +41,4 @@ while True:
             delta_x = (160 - b[5]) * (22 / 320)
             reciprocal_of_r = delta_x / (l * math.sqrt(pow(delta_x, 2) + pow(l, 2)))
             uart1_send(reciprocal_of_r)
-    lcd.display(img)
+    # lcd.display(img)
