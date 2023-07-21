@@ -28,6 +28,11 @@
 "smart_car_for_unedc\motor.o"
 "smart_car_for_unedc\pid.o"
 "smart_car_for_unedc\receive.o"
+"smart_car_for_unedc\ring.o"
+"smart_car_for_unedc\transmit.o"
+"smart_car_for_unedc\list.o"
+"smart_car_for_unedc\task_process.o"
+"smart_car_for_unedc\timesilce_task.o"
 --library_type=microlib --strict --scatter "smart_car_for_UNEDC\smart_car_for_UNEDC.sct"
 --summary_stderr --info summarysizes --map --load_addr_map_info --xref --callgraph --symbols
 --info sizes --info totals --info unused --info veneers

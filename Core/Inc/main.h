@@ -61,6 +61,7 @@ void Error_Handler(void);
 #define hdma_usart_with_K210_rx hdma_usart2_rx
 #define hdma_usart_for_debug_rx hdma_usart1_rx
 #define huart_for_debug huart1
+#define hdma_usart_for_debug_tx hdma_usart1_tx
 #define OSC_IN_Pin GPIO_PIN_0
 #define OSC_IN_GPIO_Port GPIOD
 #define OSC_OUT_Pin GPIO_PIN_1

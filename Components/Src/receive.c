@@ -19,11 +19,12 @@
 
 /* 在此加入 uart, 并将其放入地址列表中 BEGIN */
 // 对应的 extern 也要修改
-uart_receive_t uart_for_debug;
-uart_receive_t uart_with_K210;
+// 记得把对应的 dma extern 出去
+uart_receive_t uart_receive_for_debug;
+uart_receive_t uart_receive_with_K210;
 
-uart_receive_t *(uart_receive_list[]) = {&uart_for_debug, &uart_with_K210};
-uint8_t num_of_uarts = 2;
+uart_receive_t *(uart_receive_list[]) = {&uart_receive_for_debug, &uart_receive_with_K210};
+uint8_t num_of_uart_receives = 2;
 /* 在此加入 uart, 并将其放入地址列表中 END */
 
 /**
@@ -39,7 +40,7 @@ void Receive_Init(uart_receive_t *puart_receive, UART_HandleTypeDef *huart, DMA_
     puart_receive->hdma = hdma;
 
     memset(puart_receive->RxBuf, '\0', RxBuf_SIZE);
-    memset(puart_receive->MainBuf, '\0', MainBuf_SIZE);
+    memset(puart_receive->MainBuf, '\0', RxMainBuf_SIZE);
 
     puart_receive->head = 0;
     puart_receive->tail = 0;
@@ -71,7 +72,7 @@ static void Receive_FlagReset(uart_receive_t *puart_receive)
  */
 void Receive_Reset(uart_receive_t *puart_receive)
 {
-    memset(puart_receive->MainBuf, '\0', MainBuf_SIZE);
+    memset(puart_receive->MainBuf, '\0', RxMainBuf_SIZE);
     memset(puart_receive->RxBuf, '\0', RxBuf_SIZE);
     Receive_FlagReset(puart_receive);
 }
@@ -82,7 +83,7 @@ void Receive_Reset(uart_receive_t *puart_receive)
  * @param puart_receive 
  * @param cmd_start 
  * @param cmd_end 
- * @param pdata 长度必须大于等于 MainBuf_SIZE
+ * @param pdata 长度必须大于等于 RxMainBuf_SIZE
  * @return RECEIVE_STATUS_t 
  */
 RECEIVE_STATUS_t Receive_FindFirstVaildString(uart_receive_t *puart_receive, char *cmd_start, char *cmd_end, char *pdata)
@@ -107,7 +108,7 @@ RECEIVE_STATUS_t Receive_FindFirstVaildString(uart_receive_t *puart_receive, cha
         while (puart_receive->MainBuf[indx_buf] != cmd_start[indx_cmd])
         {
             indx_buf++;
-            if (indx_buf >= MainBuf_SIZE)
+            if (indx_buf >= RxMainBuf_SIZE)
                 indx_buf = 0;
             if (indx_buf == tail_copy)
             {
@@ -120,7 +121,7 @@ RECEIVE_STATUS_t Receive_FindFirstVaildString(uart_receive_t *puart_receive, cha
 
         for (indx_cmd = 0; indx_cmd < cmd_start_len; indx_cmd++)
         {
-            if (indx_buf >= MainBuf_SIZE)
+            if (indx_buf >= RxMainBuf_SIZE)
                 indx_buf = 0;
             if (indx_buf == tail_copy)
             {
@@ -145,7 +146,7 @@ RECEIVE_STATUS_t Receive_FindFirstVaildString(uart_receive_t *puart_receive, cha
         while (puart_receive->MainBuf[indx_buf] != cmd_end[indx_cmd])
         {
             indx_buf++;
-            if (indx_buf >= MainBuf_SIZE)
+            if (indx_buf >= RxMainBuf_SIZE)
                 indx_buf = 0;
             if (indx_buf == tail_copy)
             {
@@ -159,7 +160,7 @@ RECEIVE_STATUS_t Receive_FindFirstVaildString(uart_receive_t *puart_receive, cha
         for (indx_cmd = 0; indx_cmd < cmd_end_len; indx_cmd++)
         {
             // 这两个判断要放在前面, 否则当命令包尾正好时 MainBuf 的 tail 时会出错
-            if (indx_buf >= MainBuf_SIZE)
+            if (indx_buf >= RxMainBuf_SIZE)
                 indx_buf = 0;
             if (indx_buf == tail_copy)
             {
@@ -188,7 +189,7 @@ RECEIVE_STATUS_t Receive_FindFirstVaildString(uart_receive_t *puart_receive, cha
         else
         {
             uint16_t data_in_tail_len = 0;
-            data_in_tail_len = MainBuf_SIZE - data_start_pos;
+            data_in_tail_len = RxMainBuf_SIZE - data_start_pos;
             memcpy((void *)pdata, (void *)(puart_receive->MainBuf + data_start_pos), data_in_tail_len);
             memcpy((void *)(pdata + data_in_tail_len), (void *)puart_receive->MainBuf, data_end_pos);
             puart_receive->head = indx_buf;
@@ -218,7 +219,7 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
 {
     // 找到 huart 对应的 uart_receive
     uart_receive_t *puart_receive = NULL;
-    for (uint8_t i = 0; i < num_of_uarts; i++)
+    for (uint8_t i = 0; i < num_of_uart_receives; i++)
     {
         if (uart_receive_list[i]->huart == huart)
         {
@@ -233,16 +234,15 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
 
         uint16_t space_remaining; // 记录 MainBuf 剩余空间
         if (puart_receive->head <= puart_receive->tail)
-            space_remaining = MainBuf_SIZE - (puart_receive->tail - puart_receive->head);
+            space_remaining = RxMainBuf_SIZE - (puart_receive->tail - puart_receive->head);
         else
             space_remaining = puart_receive->head - puart_receive->tail;
 
         // 拷贝数据 (如有溢出拷贝在前面，即形成环式的数据)
-        if (puart_receive->oldPos + Size > MainBuf_SIZE) // If the current position + new data size is greater than the main buffer
+        if (puart_receive->oldPos + Size > RxMainBuf_SIZE) // If the current position + new data size is greater than the main buffer
         {
-            uint16_t datatocopy = MainBuf_SIZE - puart_receive->oldPos;                   // find out how much space is left in the main buffer
+            uint16_t datatocopy = RxMainBuf_SIZE - puart_receive->oldPos;                   // find out how much space is left in the main buffer
             memcpy((void *)(puart_receive->MainBuf + puart_receive->oldPos), (void *)puart_receive->RxBuf, datatocopy); // copy data in that remaining space
-            // (uint8_t *) ?
             puart_receive->oldPos = 0;                                                                 // point to the start of the buffer
             memcpy((void *)puart_receive->MainBuf, (void *)(puart_receive->RxBuf + datatocopy), (Size - datatocopy)); // copy the remaining data
             puart_receive->newPos = (Size - datatocopy);                                               // update the position
@@ -258,7 +258,7 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
         {
             puart_receive->is_data_overwritten = 1;
             puart_receive->head = puart_receive->tail + 1;
-            if (puart_receive->head == MainBuf_SIZE)
+            if (puart_receive->head == RxMainBuf_SIZE)
                 puart_receive->head = 0;
         }
 

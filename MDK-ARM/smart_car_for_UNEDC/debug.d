@@ -2,7 +2,7 @@ smart_car_for_unedc\debug.o: ..\Components\Src\debug.c
 smart_car_for_unedc\debug.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdio.h
 smart_car_for_unedc\debug.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdlib.h
 smart_car_for_unedc\debug.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\string.h
-smart_car_for_unedc\debug.o: ..\Components\Inc\debug.h
+smart_car_for_unedc\debug.o: ../Components/Inc/debug.h
 smart_car_for_unedc\debug.o: ../Core/Inc/main.h
 smart_car_for_unedc\debug.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal.h
 smart_car_for_unedc\debug.o: ../Core/Inc/stm32f1xx_hal_conf.h
@@ -32,7 +32,10 @@ smart_car_for_unedc\debug.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_p
 smart_car_for_unedc\debug.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim.h
 smart_car_for_unedc\debug.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim_ex.h
 smart_car_for_unedc\debug.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h
-smart_car_for_unedc\debug.o: ..\Components\Inc\receive.h
-smart_car_for_unedc\debug.o: ..\Components\Inc\control.h
-smart_car_for_unedc\debug.o: ..\Components\Inc\motor.h
-smart_car_for_unedc\debug.o: ..\Components\Inc\pid.h
+smart_car_for_unedc\debug.o: ../Components/Inc/receive.h
+smart_car_for_unedc\debug.o: ../Core/Inc/usart.h
+smart_car_for_unedc\debug.o: ../Components/Inc/control.h
+smart_car_for_unedc\debug.o: ../Components/Inc/motor.h
+smart_car_for_unedc\debug.o: ../Components/Inc/pid.h
+smart_car_for_unedc\debug.o: ..\System\Inc\task_process.h
+smart_car_for_unedc\debug.o: ../Core/Inc/stm32f1xx_it.h

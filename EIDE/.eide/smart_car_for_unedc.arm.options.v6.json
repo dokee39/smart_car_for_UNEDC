@@ -10,7 +10,7 @@
         "optimization": "level-0",
         "language-c": "c99",
         "language-cpp": "c++11",
-        "link-time-optimization": false
+        "warnings": "ac5-like-warnings"
     },
     "asm-compiler": {
         "$use": "asm-auto"

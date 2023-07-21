@@ -340,7 +340,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F103xE</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../Drivers/STM32F1xx_HAL_Driver/Inc;../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F1xx/Include;../Drivers/CMSIS/Include;../Components/Inc</IncludePath>
+              <IncludePath>../Core/Inc;../Drivers/STM32F1xx_HAL_Driver/Inc;../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F1xx/Include;../Drivers/CMSIS/Include;../Components/Inc;..\System\Inc</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -752,6 +752,36 @@
               <FileName>receive.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Components\Src\receive.c</FilePath>
+            </File>
+            <File>
+              <FileName>ring.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Components\Src\ring.c</FilePath>
+            </File>
+            <File>
+              <FileName>transmit.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Components\Src\transmit.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>System</GroupName>
+          <Files>
+            <File>
+              <FileName>list.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\System\Src\list.c</FilePath>
+            </File>
+            <File>
+              <FileName>task_process.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\System\Src\task_process.c</FilePath>
+            </File>
+            <File>
+              <FileName>timesilce_task.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\System\Src\timesilce_task.c</FilePath>
             </File>
           </Files>
         </Group>

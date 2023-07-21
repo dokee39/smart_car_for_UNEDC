@@ -46,6 +46,12 @@
                   },
                   {
                     "path": "../Components/Src/receive.c"
+                  },
+                  {
+                    "path": "../Components/Src/ring.c"
+                  },
+                  {
+                    "path": "../Components/Src/transmit.c"
                   }
                 ],
                 "folders": []

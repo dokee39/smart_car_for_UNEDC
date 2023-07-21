@@ -22,6 +22,7 @@
 #include "debug.h"
 #include "stm32f1xx_it.h"
 #include "receive.h"
+#include "transmit.h"
 
 #define PID_SPEED_MOTOR1_P 10.05f// 6.7f
 #define PID_SPEED_MOTOR1_I 3.3f// 2.2f
@@ -82,7 +83,7 @@ static float motor2_voltage = 0.0f; // 不是实际电压值, 只是确定 PWM �
 
 static char *cmd_start = "<!"; // K210 命令包头
 static char *cmd_end = ">!";   // K210 命令包尾
-static char cmd[MainBuf_SIZE]; // 用于存放从 K210 收到的命令
+static char cmd[RxMainBuf_SIZE]; // 用于存放从 K210 收到的命令
 
 void Control_PID_Init(void)
 {
@@ -191,9 +192,9 @@ void Control_SetSteerCompensation_basedon_Receive(void)
     static uint8_t is_received_from_K210[STEER_COMPENSATION_DELAY] = {0};
     static uint8_t cnt = 0;
 
-    memset(cmd, '\0', MainBuf_SIZE);
+    memset(cmd, '\0', RxMainBuf_SIZE);
     is_received_from_K210[STEER_COMPENSATION_DELAY - 1] = 0;
-    if (Receive_FindFirstVaildString(&uart_with_K210, cmd_start, cmd_end, cmd) == RECEIVE_SUCCESS)
+    if (Receive_FindFirstVaildString(&uart_receive_with_K210, cmd_start, cmd_end, cmd) == RECEIVE_SUCCESS)
     {
         if (sscanf(cmd, "%f", &motor_dir_err_tmp) != EOF)
         {
@@ -320,7 +321,7 @@ void Control_Task(void)
         printf("printf start in %dms\r\n", time_start);
 #endif // !IS_DEBUG_UART_TIME_FEEDBACK_ON
         motor_speed_difference_set = motor_steer_compensation_ratio * motor_speed_set;
-        printf("motor: %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f\r\n",
+        Transmit_printf(&uart_transmit_for_debug, "motor: %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f\r\n",
                motor1_speed,
                motor2_speed,
                pids.speed.motor1.set,

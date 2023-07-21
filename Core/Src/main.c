@@ -29,9 +29,12 @@
 #if IS_DEBUG_UART_ON && IS_DEBUG_ON
 #include "receive.h"
 #endif
+#include "transmit.h"
 #include "control.h"
 #include "motor.h"
 #include "task_process.h"
+
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -105,6 +108,13 @@ int main(void)
     // IN the Generated code, make sure the DMA is initialized before the UART.
     // CubeMX sometimes does the opposite and in that case, DMA won't work
 
+    Receive_Init(&uart_receive_with_K210, &huart_with_K210, &hdma_usart_with_K210_rx);
+
+#if IS_DEBUG_UART_ON && IS_DEBUG_ON
+    Transmit_Init(&uart_transmit_for_debug, &huart_for_debug, &hdma_usart_for_debug_tx);
+    Receive_Init(&uart_receive_for_debug, &huart_for_debug, &hdma_usart_for_debug_rx);
+#endif // !IS_DEBUG_UART_ON && IS_DEBUG_ON
+
     // Timer Start
     HAL_TIM_Encoder_Start(&htim_Motor1_Encoder, TIM_CHANNEL_ENCODER_1);
     HAL_TIM_Encoder_Start(&htim_Motor1_Encoder, TIM_CHANNEL_ENCODER_2);
@@ -116,9 +126,11 @@ int main(void)
     // PID Param Init
     Control_PID_Init();
 
+    Receive_Init(&uart_receive_with_K210, &huart_with_K210, &hdma_usart_with_K210_rx);
+
 #if IS_DEBUG_UART_ON && IS_DEBUG_ON
-    Receive_Init(&uart_for_debug, &huart_for_debug, &hdma_usart_for_debug_rx);
-    Receive_Init(&uart_with_K210, &huart_with_K210, &hdma_usart_with_K210_rx);
+    Transmit_Init(&uart_transmit_for_debug, &huart_for_debug, &hdma_usart_for_debug_tx);
+    Receive_Init(&uart_receive_for_debug, &huart_for_debug, &hdma_usart_for_debug_rx);
 
 #if IS_DEBUG_UART_PID_LOOP_SPEED || IS_DEBUG_UART_PID_LOOP_LOCATION_SPEED
     Motor_Enable(MOTOR1);

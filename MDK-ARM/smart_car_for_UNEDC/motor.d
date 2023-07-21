@@ -29,4 +29,4 @@ smart_car_for_unedc\motor.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_t
 smart_car_for_unedc\motor.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim_ex.h
 smart_car_for_unedc\motor.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h
 smart_car_for_unedc\motor.o: ../Core/Inc/tim.h
-smart_car_for_unedc\motor.o: ..\Components\Inc\motor.h
+smart_car_for_unedc\motor.o: ../Components/Inc/motor.h

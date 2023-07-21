@@ -32,8 +32,11 @@ smart_car_for_unedc\main.o: ../Core/Inc/dma.h
 smart_car_for_unedc\main.o: ../Core/Inc/tim.h
 smart_car_for_unedc\main.o: ../Core/Inc/usart.h
 smart_car_for_unedc\main.o: ../Core/Inc/gpio.h
-smart_car_for_unedc\main.o: ..\Components\Inc\debug.h
-smart_car_for_unedc\main.o: ..\Components\Inc\receive.h
-smart_car_for_unedc\main.o: ..\Components\Inc\control.h
-smart_car_for_unedc\main.o: ..\Components\Inc\motor.h
-smart_car_for_unedc\main.o: ..\Components\Inc\pid.h
+smart_car_for_unedc\main.o: ../Components/Inc/debug.h
+smart_car_for_unedc\main.o: ../Components/Inc/receive.h
+smart_car_for_unedc\main.o: ../Components/Inc/transmit.h
+smart_car_for_unedc\main.o: ../Components/Inc/ring.h
+smart_car_for_unedc\main.o: ../Components/Inc/control.h
+smart_car_for_unedc\main.o: ../Components/Inc/motor.h
+smart_car_for_unedc\main.o: ../Components/Inc/pid.h
+smart_car_for_unedc\main.o: ..\System\Inc\task_process.h

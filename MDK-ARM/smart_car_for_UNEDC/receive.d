@@ -28,7 +28,7 @@ smart_car_for_unedc\receive.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal
 smart_car_for_unedc\receive.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim_ex.h
 smart_car_for_unedc\receive.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h
 smart_car_for_unedc\receive.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\string.h
-smart_car_for_unedc\receive.o: ..\Components\Inc\receive.h
+smart_car_for_unedc\receive.o: ../Components/Inc/receive.h
 smart_car_for_unedc\receive.o: ../Core/Inc/usart.h
 smart_car_for_unedc\receive.o: ../Core/Inc/main.h
 smart_car_for_unedc\receive.o: ../Core/Inc/dma.h

@@ -1,8 +1,8 @@
 smart_car_for_unedc\pid.o: ..\Components\Src\pid.c
 smart_car_for_unedc\pid.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\math.h
-smart_car_for_unedc\pid.o: ..\Components\Inc\pid.h
+smart_car_for_unedc\pid.o: ../Components/Inc/pid.h
 smart_car_for_unedc\pid.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
-smart_car_for_unedc\pid.o: ..\Components\Inc\debug.h
+smart_car_for_unedc\pid.o: ../Components/Inc/debug.h
 smart_car_for_unedc\pid.o: ../Core/Inc/main.h
 smart_car_for_unedc\pid.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal.h
 smart_car_for_unedc\pid.o: ../Core/Inc/stm32f1xx_hal_conf.h

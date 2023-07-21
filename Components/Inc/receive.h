@@ -12,9 +12,11 @@
 #ifndef __RECEIVE_H__
 #define __RECEIVE_H__
 
+#include "usart.h"
+
 /* Define the Size Here */
 #define RxBuf_SIZE 64
-#define MainBuf_SIZE 128
+#define RxMainBuf_SIZE 128
 
 typedef struct
 {
@@ -22,7 +24,7 @@ typedef struct
     DMA_HandleTypeDef *hdma;
 
     uint8_t RxBuf[RxBuf_SIZE];
-    uint8_t MainBuf[MainBuf_SIZE];
+    uint8_t MainBuf[RxMainBuf_SIZE];
 
     // position used by callback function
     uint16_t oldPos;
@@ -44,8 +46,8 @@ typedef enum
 
 /* 在此加入 uart, 并将其放入地址列表中 BEGIN */
 // C 文件中对应的也要修改
-extern uart_receive_t uart_for_debug;
-extern uart_receive_t uart_with_K210;
+extern uart_receive_t uart_receive_for_debug;
+extern uart_receive_t uart_receive_with_K210;
 /* 在此加入 uart, 并将其放入地址列表中 END */
 
 void Receive_Init(uart_receive_t *puart_receive, UART_HandleTypeDef *huart, DMA_HandleTypeDef *hdma);

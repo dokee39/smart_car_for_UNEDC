@@ -1,5 +1,5 @@
 smart_car_for_unedc\encoder.o: ..\Components\Src\encoder.c
-smart_car_for_unedc\encoder.o: ..\Components\Inc\encoder.h
+smart_car_for_unedc\encoder.o: ../Components/Inc/encoder.h
 smart_car_for_unedc\encoder.o: ../Core/Inc/main.h
 smart_car_for_unedc\encoder.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal.h
 smart_car_for_unedc\encoder.o: ../Core/Inc/stm32f1xx_hal_conf.h

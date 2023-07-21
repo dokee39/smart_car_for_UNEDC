@@ -54,7 +54,7 @@ typedef struct
 
 static char *cmd_start = "<!"; // 命令包头
 static char *cmd_end = ">!";   // 命令包尾
-static char cmd[MainBuf_SIZE]; // 用于存放收到的命令
+static char cmd[RxMainBuf_SIZE]; // 用于存放收到的命令
 
 // 用于存放收到的命令的各部分
 char motor_received[8];
@@ -314,8 +314,8 @@ static CMD_FIND_STATUS_t pid_set(void)
 void Debug_SetPID_basedon_Receive(void)
 {
     receive_time_ref = 0;
-    memset(cmd, '\0', MainBuf_SIZE);
-    if (Receive_FindFirstVaildString(&uart_for_debug, cmd_start, cmd_end, cmd) == RECEIVE_SUCCESS)
+    memset(cmd, '\0', RxMainBuf_SIZE);
+    if (Receive_FindFirstVaildString(&uart_receive_for_debug, cmd_start, cmd_end, cmd) == RECEIVE_SUCCESS)
     {
         if (cmd_information_find() == CMD_FIND_SUCCESS)
         {
