@@ -23,21 +23,21 @@
 #include "stm32f1xx_it.h"
 #include "receive.h"
 
-#define PID_SPEED_MOTOR1_P 6.7f
-#define PID_SPEED_MOTOR1_I 2.2f
+#define PID_SPEED_MOTOR1_P 10.05f// 6.7f
+#define PID_SPEED_MOTOR1_I 3.3f// 2.2f
 #define PID_SPEED_MOTOR1_D 0.0f
 
-#define PID_SPEED_MOTOR2_P 7.3f
-#define PID_SPEED_MOTOR2_I 2.3f
+#define PID_SPEED_MOTOR2_P 10.95f// 7.3f
+#define PID_SPEED_MOTOR2_I 3.45f// 2.3f
 #define PID_SPEED_MOTOR2_D 0.0f
 
-#define PID_LOCATION_P 15.0f
+#define PID_LOCATION_P 22.5f// 15.0f
 #define PID_LOCATION_I 0.0f
 #define PID_LOCATION_D 0.0f
 
-#define PID_STEER_COMPENSATION_P 20.0f
-#define PID_STEER_COMPENSATION_I 1.4f
-#define PID_STEER_COMPENSATION_D 30.0f
+#define PID_STEER_COMPENSATION_P 10.5f
+#define PID_STEER_COMPENSATION_I 0.74f
+#define PID_STEER_COMPENSATION_D 15.8f
 
 #if IS_DEBUG_UART_ON && IS_DEBUG_ON
 static float debug_motor1_voltage = 0.0f; // 真实电压值
@@ -103,8 +103,8 @@ void Control_PID_Init(void)
                     TARGET_SPEED_MAX, 0.0f,
                     PID_LOCATION_P, PID_LOCATION_I, PID_LOCATION_D);
     pid_struct_init(&pids.steer_compensation,
-                    0.01f, 0.0002f, 0.0f,
-                    MOTOR_DIR_ERR_VALID_MAX, 0.0f,
+                    MOTOR_DIR_ERR_VALID_MAX, 0.0004f, 0.0f,
+                    MOTOR_DIR_ERR_MAX, 0.0f,
                     PID_STEER_COMPENSATION_P, PID_STEER_COMPENSATION_I, PID_STEER_COMPENSATION_D);
 }
 
