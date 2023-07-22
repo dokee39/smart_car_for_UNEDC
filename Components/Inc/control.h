@@ -27,7 +27,7 @@
 /**************** 软件设置 **************************/
 #define CONTROL_LOCAATION_DIV 2 // 每隔多少次进行一次位置控制
 
-#define TARGET_SPEED_MAX 150.0f
+#define TARGET_SPEED_MAX 120.0f
 #define DELTA_SPEED_MAX 25.0f
 
 #define MOTOR_DIR_ERR_MAX 1.0f 

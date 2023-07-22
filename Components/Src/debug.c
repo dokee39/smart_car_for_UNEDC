@@ -328,6 +328,15 @@ void Debug_SetPID_basedon_Receive(void)
 
             if (pid_set() == CMD_FIND_SUCCESS)
             {
+                // TODO 
+                // TODO 
+                // TODO 
+                // TODO 
+                // TODO 
+                // TODO 
+                // TODO 
+                // TODO 
+                // TODO 定位到此处的串口发送有概率造成 HardFault_Handler !!!!!!!!!!!!!!!!!!
                 Transmit_printf(&uart_transmit_for_debug, "sent after %dms -->  PID_SET_OK!\r\n", receive_time_ref);
 #if IS_DEBUG_UART_PID_FEEDBACK_ON
                 pid_feedback();
