@@ -21,7 +21,6 @@
 typedef struct
 {
     UART_HandleTypeDef *huart;
-    DMA_HandleTypeDef *hdma;
 
     uint8_t RxBuf[RxBuf_SIZE];
     uint8_t MainBuf[RxMainBuf_SIZE];
@@ -44,13 +43,13 @@ typedef enum
     RECEIVE_FAILURE
 } RECEIVE_STATUS_t;
 
-/* 在此加入 uart, 并将其放入地址列表中 BEGIN */
+/* 在此加入 uart_receive 的外部声明 BEGIN */
 // C 文件中对应的也要修改
 extern uart_receive_t uart_receive_for_debug;
 extern uart_receive_t uart_receive_with_K210;
-/* 在此加入 uart, 并将其放入地址列表中 END */
+/* 在此加入 uart_receive 的外部声明 END */
 
-void Receive_Init(uart_receive_t *puart_receive, UART_HandleTypeDef *huart, DMA_HandleTypeDef *hdma);
+void Receive_Init(uart_receive_t *puart_receive, UART_HandleTypeDef *huart);
 void Receive_Reset(uart_receive_t *puart_receive);
 RECEIVE_STATUS_t Receive_FindFirstVaildString(uart_receive_t *puart_receive, char *cmd_start, char *cmd_end, char *pdata);
 

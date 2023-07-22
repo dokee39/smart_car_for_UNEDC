@@ -14,6 +14,7 @@
 #include <string.h>
 #include "debug.h"
 #include "receive.h"
+#include "transmit.h"
 #include "control.h"
 #include "stm32f1xx_it.h"
 
@@ -174,56 +175,56 @@ static CMD_FIND_STATUS_t cmd_information_find()
  */
 static void cmd_feedback(int32_t time)
 {
-    printf("sent after %dms -->  ", time);
-    printf("received-> ");
+    Transmit_printf(&uart_transmit_for_debug, "sent after %dms -->  ", time);
+    Transmit_printf(&uart_transmit_for_debug, "received-> ");
 
     switch (cmd_information.MOTOR)
     {
     case MOTOR1:
-        printf("motor1 ");
+        Transmit_printf(&uart_transmit_for_debug, "motor1 ");
         break;
     case MOTOR2:
-        printf("motor2 ");
+        Transmit_printf(&uart_transmit_for_debug, "motor2 ");
         break;
     case MOTOR_ALL:
-        printf("motor ");
+        Transmit_printf(&uart_transmit_for_debug, "motor ");
         break;
     }
 
     switch (cmd_information.PID_LOOP)
     {
     case PID_LOOP_SPEED:
-        printf("speed ");
+        Transmit_printf(&uart_transmit_for_debug, "speed ");
         break;
     case PID_LOOP_LOCATION:
-        printf("location ");
+        Transmit_printf(&uart_transmit_for_debug, "location ");
         break;
     case PID_LOOP_STEER_COMPENSATION:
-        printf("steer_compensation ");
+        Transmit_printf(&uart_transmit_for_debug, "steer_compensation ");
         break;
     }
 
     switch (cmd_information.PID_VALUE_TYPE)
     {
     case PID_VALUE_P_I_D:
-        printf("P_I_D ");
-        printf("set-> ");
-        printf("%.2f, %.2f, %.2f OK!\r\n", cmd_information.data[0], cmd_information.data[1], cmd_information.data[2]);
+        Transmit_printf(&uart_transmit_for_debug, "P_I_D ");
+        Transmit_printf(&uart_transmit_for_debug, "set-> ");
+        Transmit_printf(&uart_transmit_for_debug, "%.2f, %.2f, %.2f OK!\r\n", cmd_information.data[0], cmd_information.data[1], cmd_information.data[2]);
         break;
     case PID_VALUE_ERR_LIMIT:
-        printf("err_limit ");
-        printf("set-> ");
-        printf("%.2f, %.2f, %.2f OK!\r\n", cmd_information.data[0], cmd_information.data[1], cmd_information.data[2]);
+        Transmit_printf(&uart_transmit_for_debug, "err_limit ");
+        Transmit_printf(&uart_transmit_for_debug, "set-> ");
+        Transmit_printf(&uart_transmit_for_debug, "%.2f, %.2f, %.2f OK!\r\n", cmd_information.data[0], cmd_information.data[1], cmd_information.data[2]);
         break;
     case PID_VALUE_OUT_LIMIT:
-        printf("out_limit ");
-        printf("set-> ");
-        printf("%.2f, %.2f, OK!\r\n", cmd_information.data[0], cmd_information.data[1]);
+        Transmit_printf(&uart_transmit_for_debug, "out_limit ");
+        Transmit_printf(&uart_transmit_for_debug, "set-> ");
+        Transmit_printf(&uart_transmit_for_debug, "%.2f, %.2f, OK!\r\n", cmd_information.data[0], cmd_information.data[1]);
         break;
     case PID_VALUE_TARGET:
-        printf("target ");
-        printf("set-> ");
-        printf("%.2f OK!\r\n", cmd_information.data[0]);
+        Transmit_printf(&uart_transmit_for_debug, "target ");
+        Transmit_printf(&uart_transmit_for_debug, "set-> ");
+        Transmit_printf(&uart_transmit_for_debug, "%.2f OK!\r\n", cmd_information.data[0]);
         break;
     }
 }
@@ -233,26 +234,26 @@ static void cmd_feedback(int32_t time)
 static void pid_feedback()
 {
     Control_PIDs_Get(current_pids);
-    printf("sent after %dms -->  This is the current value of the pids ->\r\n", receive_time_ref);
-    printf("    -->  SPEED LOOP ->\r\n");
-    printf("        -->  MOTOR1 -> <kp> %.2f, <ki> %.2f, <kd> %.2f\r\n", current_pids[0], current_pids[1], current_pids[2]);
-    printf("                       <input_max_err> %.2f, <input_min_err> %.2f, <integral_separate_err> %.2f\r\n", current_pids[3], current_pids[4], current_pids[5]);
-    printf("                       <max_out> %.2f, <integral_limit> %.2f\r\n", current_pids[6], current_pids[7]);
-    printf("                       <set> %.2f\r\n", current_pids[8]);
-    printf("        -->  MOTOR2 -> <kp> %.2f, <ki> %.2f, <kd> %.2f\r\n", current_pids[9], current_pids[10], current_pids[11]);
-    printf("                       <input_max_err> %.2f, <input_min_err> %.2f, <integral_separate_err> %.2f\r\n", current_pids[12], current_pids[13], current_pids[14]);
-    printf("                       <max_out> %.2f, <integral_limit> %.2f\r\n", current_pids[15], current_pids[16]);
-    printf("                       <set> %.2f\r\n", current_pids[17]);
-    printf("    -->  LOCATION LOOP ->\r\n");
-    printf("                       <kp> %.2f, <ki> %.2f, <kd> %.2f\r\n", current_pids[18], current_pids[19], current_pids[20]);
-    printf("                       <input_max_err> %.2f, <input_min_err> %.2f, <integral_separate_err> %.2f\r\n", current_pids[21], current_pids[22], current_pids[23]);
-    printf("                       <max_out> %.2f, <integral_limit> %.2f\r\n", current_pids[24], current_pids[25]);
-    printf("                       <set> %.2f\r\n", current_pids[26]);
-    printf("    -->  STEER_COMPENSATION LOOP ->\r\n");
-    printf("                       <kp> %.2f, <ki> %.2f, <kd> %.2f\r\n", current_pids[27], current_pids[28], current_pids[29]);
-    printf("                       <input_max_err> %.2f, <input_min_err> %.2f, <integral_separate_err> %.2f\r\n", current_pids[30], current_pids[31], current_pids[32]);
-    printf("                       <max_out> %.2f, <integral_limit> %.2f\r\n", current_pids[33], current_pids[34]);
-    printf("                       <set> %.2f\r\n", current_pids[35]);
+    Transmit_printf(&uart_transmit_for_debug, "sent after %dms -->  This is the current value of the pids ->\r\n", receive_time_ref);
+    Transmit_printf(&uart_transmit_for_debug, "    -->  SPEED LOOP ->\r\n");
+    Transmit_printf(&uart_transmit_for_debug, "        -->  MOTOR1 -> <kp> %.2f, <ki> %.2f, <kd> %.2f\r\n", current_pids[0], current_pids[1], current_pids[2]);
+    Transmit_printf(&uart_transmit_for_debug, "                       <input_max_err> %.2f, <input_min_err> %.2f, <integral_separate_err> %.2f\r\n", current_pids[3], current_pids[4], current_pids[5]);
+    Transmit_printf(&uart_transmit_for_debug, "                       <max_out> %.2f, <integral_limit> %.2f\r\n", current_pids[6], current_pids[7]);
+    Transmit_printf(&uart_transmit_for_debug, "                       <set> %.2f\r\n", current_pids[8]);
+    Transmit_printf(&uart_transmit_for_debug, "        -->  MOTOR2 -> <kp> %.2f, <ki> %.2f, <kd> %.2f\r\n", current_pids[9], current_pids[10], current_pids[11]);
+    Transmit_printf(&uart_transmit_for_debug, "                       <input_max_err> %.2f, <input_min_err> %.2f, <integral_separate_err> %.2f\r\n", current_pids[12], current_pids[13], current_pids[14]);
+    Transmit_printf(&uart_transmit_for_debug, "                       <max_out> %.2f, <integral_limit> %.2f\r\n", current_pids[15], current_pids[16]);
+    Transmit_printf(&uart_transmit_for_debug, "                       <set> %.2f\r\n", current_pids[17]);
+    Transmit_printf(&uart_transmit_for_debug, "    -->  LOCATION LOOP ->\r\n");
+    Transmit_printf(&uart_transmit_for_debug, "                       <kp> %.2f, <ki> %.2f, <kd> %.2f\r\n", current_pids[18], current_pids[19], current_pids[20]);
+    Transmit_printf(&uart_transmit_for_debug, "                       <input_max_err> %.2f, <input_min_err> %.2f, <integral_separate_err> %.2f\r\n", current_pids[21], current_pids[22], current_pids[23]);
+    Transmit_printf(&uart_transmit_for_debug, "                       <max_out> %.2f, <integral_limit> %.2f\r\n", current_pids[24], current_pids[25]);
+    Transmit_printf(&uart_transmit_for_debug, "                       <set> %.2f\r\n", current_pids[26]);
+    Transmit_printf(&uart_transmit_for_debug, "    -->  STEER_COMPENSATION LOOP ->\r\n");
+    Transmit_printf(&uart_transmit_for_debug, "                       <kp> %.2f, <ki> %.2f, <kd> %.2f\r\n", current_pids[27], current_pids[28], current_pids[29]);
+    Transmit_printf(&uart_transmit_for_debug, "                       <input_max_err> %.2f, <input_min_err> %.2f, <integral_separate_err> %.2f\r\n", current_pids[30], current_pids[31], current_pids[32]);
+    Transmit_printf(&uart_transmit_for_debug, "                       <max_out> %.2f, <integral_limit> %.2f\r\n", current_pids[33], current_pids[34]);
+    Transmit_printf(&uart_transmit_for_debug, "                       <set> %.2f\r\n", current_pids[35]);
 }
 #endif // !IS_DEBUG_UART_PID_FEEDBACK_ON
 
@@ -327,20 +328,20 @@ void Debug_SetPID_basedon_Receive(void)
 
             if (pid_set() == CMD_FIND_SUCCESS)
             {
-                printf("sent after %dms -->  PID_SET_OK!\r\n", receive_time_ref);
+                Transmit_printf(&uart_transmit_for_debug, "sent after %dms -->  PID_SET_OK!\r\n", receive_time_ref);
 #if IS_DEBUG_UART_PID_FEEDBACK_ON
                 pid_feedback();
 #endif // !IS_DEBUG_UART_PID_FEEDBACK_ON
             }
             else
             {
-                printf("sent after %dms -->  COMMAND_ERROR!\r\n", receive_time_ref);
+                Transmit_printf(&uart_transmit_for_debug, "sent after %dms -->  COMMAND_ERROR!\r\n", receive_time_ref);
             }
             is_UART_working = 0;
         }
         else
         {
-            printf("sent after %dms -->  COMMAND_ERROR!\r\n", receive_time_ref);
+            Transmit_printf(&uart_transmit_for_debug, "sent after %dms -->  COMMAND_ERROR!\r\n", receive_time_ref);
         }
     }
 }

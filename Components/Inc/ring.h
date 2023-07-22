@@ -16,9 +16,9 @@
 
 typedef enum
 {
-    RING_SUCCESS,
-    RING_OVERFLOW,
-    RING_FAILURE,
+    RING_SUCCESS = 0u,
+    RING_OVERFLOW = 1u,
+    RING_FAILURE = 2u,
 } RING_STATUS_t;
 
 typedef struct
@@ -31,7 +31,7 @@ typedef struct
 } ring_t;
 
 void ring_init(ring_t *pring, void *p, uint16_t size);
-RING_STATUS_t ring_add(ring_t *pring, void *p, uint16_t size);
+RING_STATUS_t ring_append(ring_t *pring, void *p, uint16_t size);
 RING_STATUS_t ring_fetch(ring_t *pring, void *p, uint16_t size);
 uint16_t ring_usedspace_get(ring_t *pring);
 

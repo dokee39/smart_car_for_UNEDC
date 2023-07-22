@@ -318,7 +318,7 @@ void Control_Task(void)
     {
 #if IS_DEBUG_UART_TIME_FEEDBACK_ON && IS_DEBUG_UART_ON && IS_DEBUG_ON
         time_start = pid_cal_time_ref - time;
-        printf("printf start in %dms\r\n", time_start);
+        Transmit_printf(&uart_transmit_for_debug, "printf start in %dms\r\n", time_start);
 #endif // !IS_DEBUG_UART_TIME_FEEDBACK_ON
         motor_speed_difference_set = motor_steer_compensation_ratio * motor_speed_set;
         Transmit_printf(&uart_transmit_for_debug, "motor: %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f\r\n",
@@ -336,7 +336,7 @@ void Control_Task(void)
                debug_motor2_voltage);
 #if IS_DEBUG_UART_TIME_FEEDBACK_ON && IS_DEBUG_UART_ON && IS_DEBUG_ON
         time_end = pid_cal_time_ref - time;
-        printf("printf end in %dms\r\n", time_end);
+        Transmit_printf(&uart_transmit_for_debug, "printf end in %dms\r\n", time_end);
 #endif // !IS_DEBUG_UART_TIME_FEEDBACK_ON
     }
 #endif

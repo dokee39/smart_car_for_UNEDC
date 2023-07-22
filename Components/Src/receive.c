@@ -17,27 +17,24 @@
 #include "main.h"
 #include "dma.h"
 
-/* 在此加入 uart, 并将其放入地址列表中 BEGIN */
-// 对应的 extern 也要修改
-// 记得把对应的 dma extern 出去
+/* 在此加入 uart_receive, 并将其放入地址列表中 BEGIN */
+// uart_receive 要 extern 出去
 uart_receive_t uart_receive_for_debug;
 uart_receive_t uart_receive_with_K210;
 
 uart_receive_t *(uart_receive_list[]) = {&uart_receive_for_debug, &uart_receive_with_K210};
 uint8_t num_of_uart_receives = 2;
-/* 在此加入 uart, 并将其放入地址列表中 END */
+/* 在此加入 uart_receive, 并将其放入地址列表中 END */
 
 /**
  * @brief
  *
  * @param puart_receive
  * @param phuart
- * @param phdma
  */
-void Receive_Init(uart_receive_t *puart_receive, UART_HandleTypeDef *huart, DMA_HandleTypeDef *hdma)
+void Receive_Init(uart_receive_t *puart_receive, UART_HandleTypeDef *huart)
 {
     puart_receive->huart = huart;
-    puart_receive->hdma = hdma;
 
     memset(puart_receive->RxBuf, '\0', RxBuf_SIZE);
     memset(puart_receive->MainBuf, '\0', RxMainBuf_SIZE);
@@ -52,7 +49,7 @@ void Receive_Init(uart_receive_t *puart_receive, UART_HandleTypeDef *huart, DMA_
     HAL_UARTEx_ReceiveToIdle_DMA(puart_receive->huart, puart_receive->RxBuf, RxBuf_SIZE);
     // When we enable DMA transfer using HAL, all the interrupts associated with it are also enabled.
     // As we don’t need the Half Transfer interrupt, we will disable it.
-    __HAL_DMA_DISABLE_IT(puart_receive->hdma, DMA_IT_HT);
+    __HAL_DMA_DISABLE_IT(puart_receive->huart->hdmarx, DMA_IT_HT);
 }
 
 static void Receive_FlagReset(uart_receive_t *puart_receive)
@@ -264,7 +261,7 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
 
         /* start the DMA again */
         HAL_UARTEx_ReceiveToIdle_DMA(puart_receive->huart, (uint8_t *)puart_receive->RxBuf, RxBuf_SIZE);
-        __HAL_DMA_DISABLE_IT(puart_receive->hdma, DMA_IT_HT);
+        __HAL_DMA_DISABLE_IT(puart_receive->huart->hdmarx, DMA_IT_HT);
 
         puart_receive->is_data_available = 1;
     }

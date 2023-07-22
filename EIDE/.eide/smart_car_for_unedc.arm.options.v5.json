@@ -7,7 +7,7 @@
         "use-microLIB": true
     },
     "c/cpp-compiler": {
-        "optimization": "level-1",
+        "optimization": "level-0",
         "c99-mode": true,
         "C_FLAGS": "--diag_suppress=1 --diag_suppress=1295",
         "CXX_FLAGS": "--diag_suppress=1 --diag_suppress=1295",

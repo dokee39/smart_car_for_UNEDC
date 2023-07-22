@@ -14,37 +14,36 @@
 
 #include "ring.h"
 
-#define StrBuf_SIZE 256
-#define TxBuf_SIZE 256
-#if IS_DEBUG_UART_PID_FEEDBACK_ON && IS_DEBUG_UART_ON && IS_DEBUG_ON
-#define TxMainBuf_SIZE 4096
-#else
-#define TxMainBuf_SIZE 512
-#endif
-
+// 要与 RING_STATUS 的相同
 typedef enum
 {
-    TRANSMIT_SUCCESS,
-    TRANSMIT_FAILURE,
+    TRANSMIT_SUCCESS = 0u,
+    TRANSMIT_OVERFLOW = 1u,
+    TRANSMIT_FAILURE = 2u, 
 } TRANSMIT_STATUS_t;
 
 typedef struct
 {
     UART_HandleTypeDef *huart;
-    DMA_HandleTypeDef *hdma;
 
-    uint8_t StrBuf[StrBuf_SIZE];
-    uint8_t TxBuf[TxBuf_SIZE];
-    uint8_t MainBuf[TxMainBuf_SIZE];
-    ring_t *pring_MainBuf;
+    void *StrBuf;
+    uint16_t StrBuf_SIZE;
+    void *TxBuf;
+    uint16_t TxBuf_SIZE;
+    ring_t *pring_TxMainBuf;
 
     uint8_t is_data_available; // MainBuf 中是否还有需要传的数据
-    uint8_t is_data_overflow;
+    uint8_t is_sending; // 表示正在 Transmit_Send() 函数中，以防止重复进入
 } uart_transmit_t;
 
-extern uart_transmit_t uart_transmit_for_debug;
+// TODO 可变 Size
+// TODO hdma 直接引用
 
-void Transmit_Init(uart_transmit_t *puart_transmit, UART_HandleTypeDef *huart, DMA_HandleTypeDef *hdma);
+/* 在此加入 uart_transmit 的外部声明 BEGIN */
+extern uart_transmit_t uart_transmit_for_debug;
+/* 在此加入 uart_transmit 的外部声明 END */
+
+void Transmit_Init(void);
 TRANSMIT_STATUS_t Transmit_printf(uart_transmit_t *puart_transmit, char *format, ...);
 
 #endif //!_TRANSMIT_H_
