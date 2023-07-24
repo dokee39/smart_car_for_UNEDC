@@ -12,6 +12,7 @@
 #include "usart.h"
 #include "transmit.h"
 #include "ring.h"
+#include "debug.h"
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -47,7 +48,7 @@ ring_t ring_TxMainBuf_for_debug;
  *
  * @param puart_transmit
  * @param huart
- * @param StrBuf
+ * @param StrBuf_H
  * @param StrBuf_SIZE
  * @param TxBuf
  * @param TxBuf_SIZE
@@ -57,7 +58,7 @@ ring_t ring_TxMainBuf_for_debug;
  */
 static void Transmit_Init_Internal(uart_transmit_t *puart_transmit,
                                    UART_HandleTypeDef *huart,
-                                   void *StrBuf,
+                                   void *StrBuf_H,
                                    uint16_t StrBuf_SIZE,
                                    void *TxBuf,
                                    uint16_t TxBuf_SIZE,
@@ -67,9 +68,10 @@ static void Transmit_Init_Internal(uart_transmit_t *puart_transmit,
 {
     puart_transmit->huart = huart;
 
-    puart_transmit->StrBuf = StrBuf;
+    puart_transmit->StrBuf_H = StrBuf_H;
+    puart_transmit->StrBuf_H_Printed_Size = 0;
     puart_transmit->StrBuf_SIZE = StrBuf_SIZE;
-    memset(puart_transmit->StrBuf, '\0', puart_transmit->StrBuf_SIZE);
+    memset(puart_transmit->StrBuf_H, '\0', puart_transmit->StrBuf_SIZE);
 
     puart_transmit->TxBuf = TxBuf;
     puart_transmit->TxBuf_SIZE = TxBuf_SIZE;
@@ -80,6 +82,8 @@ static void Transmit_Init_Internal(uart_transmit_t *puart_transmit,
 
     puart_transmit->is_data_available = 0;
     puart_transmit->is_sending = 0;
+    puart_transmit->is_printing = 0;
+    puart_transmit->is_data_H_available = 0;
 }
 
 /**
@@ -98,7 +102,7 @@ void Transmit_Init(void)
                            TxBuf_for_debug,
                            TxBuf_for_debug_SIZE,
                            TxMainBuf_for_debug,
-                           TxBuf_for_debug_SIZE,
+                           TxMainBuf_for_debug_SIZE,
                            &ring_TxMainBuf_for_debug);
     /* 在这里为每个 uart_trnsmit 初始化 END */
 }
@@ -109,7 +113,7 @@ void Transmit_Init(void)
  * @note 注意此函数不能重复进入, 进入该函数时会置标志位 puart_transmit->is_sending
  *
  * @param puart_transmit
- * @return TRANSMIT_STATUS_t 
+ * @return TRANSMIT_STATUS_t
  * @return 可能为 TRANSMIT_SUCCESS, TRANSMIT_FAILURE
  * @return 实际使用时并没有处理该函数的返回值, 因为正常情况下都是成功的
  */
@@ -165,32 +169,76 @@ static TRANSMIT_STATUS_t Transmit_Send(uart_transmit_t *puart_transmit)
  */
 TRANSMIT_STATUS_t Transmit_printf(uart_transmit_t *puart_transmit, char *format, ...)
 {
-    // 格式化字符串到 StrBuf
-    va_list args;
-    int16_t Size;
     TRANSMIT_STATUS_t TRANSMIT_STATUS = TRANSMIT_SUCCESS;
 
-    va_start(args, format);
-    Size = vsprintf((char *)puart_transmit->StrBuf, format, args);
-    va_end(args);
-
-    if (Size <= 0)
+    if (puart_transmit->is_data_H_available == 1)
     {
-        TRANSMIT_STATUS = TRANSMIT_FAILURE;
+        TRANSMIT_STATUS = (TRANSMIT_STATUS_t)ring_append(puart_transmit->pring_TxMainBuf, puart_transmit->StrBuf_H, (uint16_t)puart_transmit->StrBuf_H_Printed_Size);
+        puart_transmit->is_data_H_available = 0;
     }
-    else
-    {
-        puart_transmit->is_data_available = 1;
 
-        // 这里包含了溢出判断
-        TRANSMIT_STATUS = (TRANSMIT_STATUS_t)ring_append(puart_transmit->pring_TxMainBuf, puart_transmit->StrBuf, (uint16_t)Size);
-        if (TRANSMIT_STATUS != TRANSMIT_FAILURE)
+    if (TRANSMIT_STATUS == TRANSMIT_SUCCESS)
+    {
+        if (puart_transmit->is_printing == 0)
         {
-            // 判断到 DMA 没有发送任务, 则进行发送
-            if (HAL_DMA_GetState(puart_transmit->huart->hdmatx) == HAL_DMA_STATE_READY)
-                Transmit_Send(puart_transmit);
+            puart_transmit->is_printing = 1;
+            // 格式化字符串到 StrBuf
+            va_list args;
+            int16_t Size;
+            uint8_t StrBuf[puart_transmit->StrBuf_SIZE];
+
+            va_start(args, format);
+            Size = vsprintf((char *)StrBuf, format, args);
+            va_end(args);
+
+            if (Size <= 0)
+            {
+                TRANSMIT_STATUS = TRANSMIT_FAILURE;
+            }
+            else
+            {
+                puart_transmit->is_data_available = 1;
+
+                // 这里包含了溢出判断
+                TRANSMIT_STATUS = (TRANSMIT_STATUS_t)ring_append(puart_transmit->pring_TxMainBuf, StrBuf, (uint16_t)Size);
+                if (TRANSMIT_STATUS != TRANSMIT_FAILURE)
+                {
+                    // 判断到 DMA 没有发送任务, 则进行发送
+                    if (HAL_DMA_GetState(puart_transmit->huart->hdmatx) == HAL_DMA_STATE_READY)
+                        Transmit_Send(puart_transmit);
+                }
+            }
+
+            if (TRANSMIT_STATUS == TRANSMIT_SUCCESS && puart_transmit->is_data_H_available == 1)
+            {
+                TRANSMIT_STATUS = (TRANSMIT_STATUS_t)ring_append(puart_transmit->pring_TxMainBuf, puart_transmit->StrBuf_H, (uint16_t)puart_transmit->StrBuf_H_Printed_Size);
+                puart_transmit->is_data_H_available = 0;
+            }
+
+            puart_transmit->is_printing = 0; // TODO 这玩意要移到最后吗还是？
+        }
+        else
+        {
+            // TODO 如果在这里被打断怎么办呢
+            // TODO 这里标志位怎么办呢
+
+            va_list args_H;
+
+            va_start(args_H, format);
+            puart_transmit->StrBuf_H_Printed_Size = vsprintf((char *)puart_transmit->StrBuf_H, format, args_H);
+            va_end(args_H);
+
+            if (puart_transmit->StrBuf_H_Printed_Size <= 0)
+            {
+                TRANSMIT_STATUS = TRANSMIT_FAILURE;
+            }
+            else
+            {
+                puart_transmit->is_data_H_available = 1;
+            }
         }
     }
+
     return TRANSMIT_STATUS;
 }
 // TODO 考虑不同优先级导致的修改

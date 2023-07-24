@@ -72,8 +72,6 @@ extern uint8_t is_motor2_en;
 
 void Motor_Enable(MOTOR_t MOTOR);
 void Motor_Disable(MOTOR_t MOTOR);
-void Motor_DirSet(MOTOR_t MOTOR, MOTOR_DIR_t MOTOR_DIR);
-void Motor_DutySet(MOTOR_t MOTOR, uint16_t duty);
 void Motor_Output(int16_t motor1_PWM_duty, int16_t motor2_PWM_duty);
 
 #endif

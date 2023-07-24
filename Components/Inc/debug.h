@@ -56,8 +56,8 @@ void Debug_LED_run_Toggle(void);
 #define IS_DEBUG_UART_CMD_FEEDBACK_ON 0      // 串口调试时返回收到的命令
 #define IS_DEBUG_UART_PID_FEEDBACK_ON 0      // 串口调试时返回当前全部的 PID 设置
 // 下面分别调试 pid 各环的不能同时打开
-#define IS_DEBUG_UART_PID_LOOP_SPEED 1          // 调试速度环时打开此开关
-#define IS_DEBUG_UART_PID_LOOP_LOCATION_SPEED 0 // 调试位置速度环时打开此开关
+#define IS_DEBUG_UART_PID_LOOP_SPEED 0          // 调试速度环时打开此开关
+#define IS_DEBUG_UART_PID_LOOP_LOCATION_SPEED 1 // 调试位置速度环时打开此开关
 #if IS_DEBUG_UART_ON
 
 // 接收到信息的最大字符数
@@ -74,3 +74,4 @@ void Debug_SetPID_basedon_Receive(void);
 #endif // !IS_DEBUG_ON
 
 #endif // !__DEBUG_H__
+

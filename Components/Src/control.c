@@ -24,21 +24,21 @@
 #include "receive.h"
 #include "transmit.h"
 
-#define PID_SPEED_MOTOR1_P 10.05f// 6.7f
-#define PID_SPEED_MOTOR1_I 3.3f// 2.2f
-#define PID_SPEED_MOTOR1_D 0.0f
+#define PID_SPEED_MOTOR1_P 4.5f  // 6.7f
+#define PID_SPEED_MOTOR1_I 2.85f // 2.2f
+#define PID_SPEED_MOTOR1_D 0.95f
 
-#define PID_SPEED_MOTOR2_P 10.95f// 7.3f
-#define PID_SPEED_MOTOR2_I 3.45f// 2.3f
-#define PID_SPEED_MOTOR2_D 0.0f
+#define PID_SPEED_MOTOR2_P 4.5f // 7.3f
+#define PID_SPEED_MOTOR2_I 2.85f  // 2.3f
+#define PID_SPEED_MOTOR2_D 0.95f
 
-#define PID_LOCATION_P 22.5f// 15.0f
+#define PID_LOCATION_P 20.0f // 15.0f
 #define PID_LOCATION_I 0.0f
 #define PID_LOCATION_D 0.0f
 
-#define PID_STEER_COMPENSATION_P 10.5f
-#define PID_STEER_COMPENSATION_I 0.74f
-#define PID_STEER_COMPENSATION_D 15.8f
+#define PID_STEER_COMPENSATION_P 13.0f
+#define PID_STEER_COMPENSATION_I 1.5f
+#define PID_STEER_COMPENSATION_D 30.0f
 
 #if IS_DEBUG_UART_ON && IS_DEBUG_ON
 static float debug_motor1_voltage = 0.0f; // 真实电压值
@@ -81,15 +81,15 @@ static float motor_location_set = 0.0f; // 位置环设置的目标值
 static float motor1_voltage = 0.0f; // 速度环的输出值
 static float motor2_voltage = 0.0f; // 不是实际电压值, 只是确定 PWM 占空比的比较值
 
-static char *cmd_start = "<!"; // K210 命令包头
-static char *cmd_end = ">!";   // K210 命令包尾
+static char *cmd_start = "<!";   // K210 命令包头
+static char *cmd_end = ">!";     // K210 命令包尾
 static char cmd[RxMainBuf_SIZE]; // 用于存放从 K210 收到的命令
 
 void Control_PID_Init(void)
 {
-    // &pid, 
-    // input_max_err, input_min_err, integral_separate_err, 
-    // maxout, intergral_limit, 
+    // &pid,
+    // input_max_err, input_min_err, integral_separate_err,
+    // maxout, intergral_limit,
     // kp, ki, kd
     pid_struct_init(&pids.speed.motor1,
                     0.0f, 0.5f, 0.0f,
@@ -314,7 +314,7 @@ void Control_Task(void)
     Motor_Output((int16_t)motor1_voltage, (int16_t)motor2_voltage);
 
 #if IS_DEBUG_UART_REAL_TIME_MONITOR_ON && IS_DEBUG_UART_ON && IS_DEBUG_ON
-    if (is_UART_working == 0)
+    if (/* is_UART_working == 0*/ 1)
     {
 #if IS_DEBUG_UART_TIME_FEEDBACK_ON && IS_DEBUG_UART_ON && IS_DEBUG_ON
         time_start = pid_cal_time_ref - time;
@@ -322,18 +322,18 @@ void Control_Task(void)
 #endif // !IS_DEBUG_UART_TIME_FEEDBACK_ON
         motor_speed_difference_set = motor_steer_compensation_ratio * motor_speed_set;
         Transmit_printf(&uart_transmit_for_debug, "motor: %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f\r\n",
-               motor1_speed,
-               motor2_speed,
-               pids.speed.motor1.set,
-               pids.speed.motor2.set,
-               motor_dir_err[STEER_COMPENSATION_DELAY - 1] * 100,
-               motor_speed_difference_set,
-               motor1_location,
-               motor2_location,
-               motor_location_average,
-               pids.location.set,
-               debug_motor1_voltage,
-               debug_motor2_voltage);
+                        motor1_speed,
+                        motor2_speed,
+                        pids.speed.motor1.set,
+                        pids.speed.motor2.set,
+                        motor_dir_err[STEER_COMPENSATION_DELAY - 1] * 100,
+                        motor_speed_difference_set,
+                        motor1_location,
+                        motor2_location,
+                        motor_location_average,
+                        pids.location.set,
+                        debug_motor1_voltage,
+                        debug_motor2_voltage);
 #if IS_DEBUG_UART_TIME_FEEDBACK_ON && IS_DEBUG_UART_ON && IS_DEBUG_ON
         time_end = pid_cal_time_ref - time;
         Transmit_printf(&uart_transmit_for_debug, "printf end in %dms\r\n", time_end);

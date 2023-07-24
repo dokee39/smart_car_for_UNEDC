@@ -16,9 +16,11 @@
 uint8_t is_motor1_en = 0;
 uint8_t is_motor2_en = 0;
 
+// 记录电机的方向
 static MOTOR_DIR_t motor1_dir = MOTOR_STOP;
 static MOTOR_DIR_t motor2_dir = MOTOR_STOP;
 
+// 记录电机的占空比
 static uint16_t motor1_duty = 0;
 static uint16_t motor2_duty = 0;
 
@@ -78,7 +80,7 @@ void Motor_Disable(MOTOR_t MOTOR)
  * @param MOTOR
  * @param MOTOR_DIR
  */
-void Motor_DirSet(MOTOR_t MOTOR, MOTOR_DIR_t MOTOR_DIR)
+static void Motor_DirSet(MOTOR_t MOTOR, MOTOR_DIR_t MOTOR_DIR)
 {
 
     if (MOTOR == MOTOR1)
@@ -122,10 +124,10 @@ void Motor_DirSet(MOTOR_t MOTOR, MOTOR_DIR_t MOTOR_DIR)
 /**
  * @brief 设置电机 PWM 的占空比
  *
- * @param MOTOR
+ * @param MOTOR 
  * @param duty
  */
-void Motor_DutySet(MOTOR_t MOTOR, uint16_t duty)
+static void Motor_DutySet(MOTOR_t MOTOR, uint16_t duty)
 {
     if (MOTOR == MOTOR1)
     {
@@ -167,7 +169,6 @@ void Motor_Output(int16_t motor1_PWM_duty, int16_t motor2_PWM_duty)
         motor2_PWM_duty = -motor2_PWM_duty;
         Motor_DirSet(MOTOR2, MOTOR_REV); // 正方向要对应
     }
-
     motor2_PWM_duty = (motor2_PWM_duty > MOTOR_DUTY_MAX) ? MOTOR_DUTY_MAX : motor2_PWM_duty; // 速度上限处理
 
     Motor_DutySet(MOTOR1, motor1_PWM_duty); // 设置 PWM 占空比
